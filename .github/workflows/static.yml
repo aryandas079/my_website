@@ -29,9 +29,8 @@ jobs:
         run: |
           mkdir -p _site
           cp index.html _site/
-          # If you have other assets like CSS files or images (like aryan.jpg), uncomment and adjust these lines:
-          # cp aryan.jpg _site/
-          # cp style.css _site/ # If you ever split the CSS
+          # --- FIX: Ensure aryan.jpg is copied to the deployment directory ---
+          cp aryan.jpg _site/ 
           
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
