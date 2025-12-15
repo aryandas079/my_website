@@ -1,0 +1,45 @@
+name: Deploy Portfolio to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main # Trigger deployment when changes are pushed to the main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    # Grant necessary permissions for GitHub Pages deployment
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      # The "build" step for a static HTML site is just ensuring the files are ready.
+      # We assume all your files (index.html, aryan.jpg) are in the root directory.
+      # We copy them into a temporary folder named '_site' as required by the build action.
+      - name: Copy Files to Artifact Directory
+        run: |
+          mkdir -p _site
+          cp index.html _site/
+          # If you have other assets like CSS files or images (like aryan.jpg), uncomment and adjust these lines:
+          # cp aryan.jpg _site/
+          # cp style.css _site/ # If you ever split the CSS
+          
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site' # The directory containing your static files
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
