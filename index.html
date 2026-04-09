@@ -1,69 +1,256 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Aryan Das - Portfolio</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aryan Das | Portfolio</title>
+    <meta name="description" content="Aryan Das – Aspiring SWE & ML Engineer, EE @ NIT Silchar. C++, Python, DSA, CS50x Harvard, Associate Data Scientist DataCamp.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-            },
-            colors: {
-              custom: {
-                bg: '#121212',
-                card: '#1E1E1E',
-                accent: '#FCA5A5', // Rose-300 like color from screenshot
-                textMain: '#F3F4F6',
-                textMuted: '#9CA3AF',
-                border: '#333333'
-              }
-            }
-          }
-        }
-      }
-    </script>
-    <style>
-      body {
-        background-color: #121212;
-        color: #F3F4F6;
-        scroll-behavior: smooth;
-      }
-      /* Custom Scrollbar */
-      ::-webkit-scrollbar {
-        width: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #121212;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #333;
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #444;
-      }
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "lucide-react": "https://esm.sh/lucide-react@^0.561.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/png" href="favicon.png">
 </head>
-  <body>
-    <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
+<body class="deck-mode">
+
+    <!-- Side nav dots (only 4 slides visible by default) -->
+    <nav class="desktop-nav" aria-label="Slide navigation" id="slide-nav">
+        <button type="button" class="active" data-slide-nav="0" aria-label="Go to Hero"></button>
+        <button type="button" data-slide-nav="1" aria-label="Go to About"></button>
+        <button type="button" data-slide-nav="2" aria-label="Go to Skills"></button>
+        <button type="button" data-slide-nav="3" aria-label="Go to Certifications"></button>
+        <button type="button" data-slide-nav="4" aria-label="Go to Work with me"></button>
+    </nav>
+
+    <main class="deck" data-deck id="main-deck">
+
+        <!-- ─── SLIDE 1: HERO ─────────────────────────────────────────── -->
+        <section class="slide slide-hero visible" id="hero" data-slide data-reveal>
+            <div class="hero-grid">
+                <!-- Left: yellow panel -->
+                <div class="hero-copy">
+                    <div class="hero-copy-inner">
+                        <h1 class="hero-name">
+                            <span class="animate-block line" style="--delay:0s;"><span>Aryan</span></span>
+                            <span class="animate-block line" style="--delay:0.12s;"><span>Das</span></span>
+                        </h1>
+                        <p class="hero-bio animate-block" style="--delay:0.26s;">
+                            <span>Aspiring SWE &amp; ML Engineer | EE @ NIT Silchar | C++ &middot; Python &middot; DSA | CS50x (Harvard) &middot; Associate Data Scientist (DataCamp)</span>
+                        </p>
+                    </div>
+                    <div class="hero-btn-row">
+                        <!-- CONTACT button — triggers the hidden contact slide -->
+                        <button class="btn-red animate-block" id="hero-contact-btn" style="--delay:0.4s;" aria-label="Open contact profile">
+                            <span>CONTACT</span>
+                        </button>
+                    </div>
+                </div>
+                <!-- Right: photo -->
+                <div class="hero-photo">
+                    <img src="files/AryanDAS.jpg" alt="Portrait of Aryan Das">
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── SLIDE 2: ABOUT ────────────────────────────────────────── -->
+        <section class="slide slide-about" id="about" data-slide data-reveal>
+            <div class="about-shell">
+                <h2 class="section-heading animate-block line" style="--delay:0s;"><span>About</span></h2>
+                <div class="about-photo">
+                    <img src="files/photo2.jpg" alt="Outdoor photo of Aryan Das">
+                </div>
+                <div class="about-body">
+                    <p class="animate-block" style="--delay:0.18s;">
+                        <span>I am a first-year Electrical Engineering student at the National Institute of Technology, Silchar — working, with some deliberateness, at the place where systems thinking meets machine intelligence. I write in C++ and Python. I study data structures and algorithms not because the syllabus requires it, but because I find poorly solved problems genuinely offensive. I am learning machine learning the same way I learn everything else: by building something that breaks, then making it not break. I hold a CS50x certification from Harvard University and an Associate Data Scientist certification from DataCamp. I mention them not to impress, but because they represent a particular quality of attention — the kind that sits with a problem until the problem yields. I do not rush. Consistency, to my mind, is the only strategy that compounds. I am always glad to connect with those who build carefully and think rigorously. C++ | Python | DSA | AI / ML | CS50x — Harvard | Associate Data Scientist | NIT Silchar '29</span>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── SLIDE 3: SKILLS ────────────────────────────────────────── -->
+        <section class="slide slide-skills" id="skills" data-slide data-reveal>
+            <div class="skills-center">
+                <button class="glass-btn animate-block" id="skills-trigger" style="--delay:0.1s;">
+                    <span>SKILLS</span>
+                </button>
+            </div>
+
+            <!-- Skills Burst Overlay (Full screen) -->
+            <div id="skills-overlay" class="skills-overlay --hidden">
+                <button class="overlay-close" id="skills-close-btn" aria-label="Close skills">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+                
+                <div class="burst-bg-accent"></div>
+                <h3 class="burst-title">EXPLORE MY STACK</h3>
+
+                <div class="skills-burst-container" id="burst-container">
+                    <!-- Skills pills will be absolutely positioned here -->
+                    <div class="skill-pill">Data Science</div>
+                    <div class="skill-pill">Matplotlib</div>
+                    <div class="skill-pill">SciPy</div>
+                    <div class="skill-pill">Pandas</div>
+                    <div class="skill-pill">Exploratory Data Analysis</div>
+                    <div class="skill-pill">Probability</div>
+                    <div class="skill-pill">Data Visualization</div>
+                    <div class="skill-pill">Seaborn</div>
+                    <div class="skill-pill">Statistics</div>
+                    <div class="skill-pill">NumPy</div>
+                    <div class="skill-pill">Git</div>
+                    <div class="skill-pill">Open-Source</div>
+                    <div class="skill-pill">GitHub</div>
+                    <div class="skill-pill">Version Control</div>
+                    <div class="skill-pill">AI Ethics</div>
+                    <div class="skill-pill">C++</div>
+                    <div class="skill-pill">C Language</div>
+                    <div class="skill-pill">Databases</div>
+                    <div class="skill-pill">Algorithmic Thinking</div>
+                    <div class="skill-pill">Data Structures</div>
+                    <div class="skill-pill">Python</div>
+                    <div class="skill-pill">Web Development</div>
+                    <div class="skill-pill">SQL</div>
+                    <div class="skill-pill">Simulink</div>
+                    <div class="skill-pill">Control Systems</div>
+                    <div class="skill-pill">Artificial Intelligence</div>
+                    <div class="skill-pill">Prompt Engineering</div>
+                    <div class="skill-pill">MATLAB</div>
+                    <div class="skill-pill">Public Speaking</div>
+                    <div class="skill-pill">Problem Solving</div>
+                    <div class="skill-pill">Generative AI</div>
+                    <div class="skill-pill">Responsible AI</div>
+                    <div class="skill-pill">Microsoft Copilot</div>
+                    <div class="skill-pill">AI in Business</div>
+                    <div class="skill-pill">AI Fluency</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── SLIDE 3: CERTIFICATIONS ───────────────────────────────── -->
+        <section class="slide slide-certs" id="certifications" data-slide data-reveal>
+            <div class="certs-shell">
+                <h2 class="section-heading animate-block line" style="--delay:0s;"><span>Certifications</span></h2>
+                <ul class="cert-list">
+                    <li class="animate-block" style="--delay:0.14s;"><span>Data Scientist Associate<br>(Datacamp)</span></li>
+                    <li class="animate-block" style="--delay:0.26s;"><span>CS50x (Harvard University)</span></li>
+                    <li class="animate-block" style="--delay:0.38s;"><span>Gemini Certified University<br>Student (Google)</span></li>
+                    <li class="animate-block" style="--delay:0.5s;"><span>Career Essentials in Generative AI<br>by Microsoft and LinkedIn<br>(Microsoft)</span></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ─── SLIDE 4: WORK WITH ME ─────────────────────────────────── -->
+        <section class="slide slide-contact" id="contact" data-slide data-reveal>
+            <div class="contact-wave">
+                <img src="files/background.jpg" alt="Ocean waves">
+            </div>
+            <div class="contact-panel">
+                <h2 class="contact-heading animate-block line" style="--delay:0.04s;"><span>Work with me</span></h2>
+                <div class="contact-info-row">
+                    <div class="contact-info-item">
+                        <p class="contact-label animate-block" style="--delay:0.18s; --block-color:#4b2615;"><span>Phone</span></p>
+                        <p class="contact-value animate-block" style="--delay:0.26s;"><span>+91 9435-885-077</span></p>
+                    </div>
+                    <div class="contact-info-item">
+                        <p class="contact-label animate-block" style="--delay:0.22s; --block-color:#4b2615;"><span>Email</span></p>
+                        <p class="contact-value animate-block" style="--delay:0.3s;"><span>dasaryan715@gmail.com</span></p>
+                    </div>
+                    <div class="contact-socials">
+                        <a class="social-icon" href="https://www.instagram.com/iam_aryandas/" target="_blank" rel="noreferrer" aria-label="Instagram" id="contact-instagram">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="url(#ig-grad)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="ig-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#f09433"/>
+                                        <stop offset="25%" stop-color="#e6683c"/>
+                                        <stop offset="50%" stop-color="#dc2743"/>
+                                        <stop offset="75%" stop-color="#cc2366"/>
+                                        <stop offset="100%" stop-color="#bc1888"/>
+                                    </linearGradient>
+                                </defs>
+                                <rect x="2" y="2" width="20" height="20" rx="5"></rect>
+                                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                            </svg>
+                        </a>
+                        <a class="social-icon" href="https://github.com/aryandas079" target="_blank" rel="noreferrer" aria-label="GitHub" id="contact-github">
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.57.11.78-.25.78-.56 0-.27-.01-1.15-.02-2.09-3.2.7-3.88-1.36-3.88-1.36-.52-1.32-1.28-1.68-1.28-1.68-1.04-.71.08-.69.08-.69 1.15.08 1.75 1.18 1.75 1.18 1.02 1.75 2.68 1.25 3.33.95.1-.74.4-1.25.72-1.53-2.55-.29-5.23-1.27-5.23-5.66 0-1.25.45-2.28 1.18-3.09-.12-.29-.51-1.45.11-3.03 0 0 .96-.31 3.14 1.18A10.93 10.93 0 0 1 12 5.83c.97 0 1.95.13 2.86.39 2.18-1.49 3.14-1.18 3.14-1.18.62 1.58.23 2.74.11 3.03.73.81 1.18 1.84 1.18 3.09 0 4.4-2.68 5.36-5.24 5.65.41.35.78 1.03.78 2.09 0 1.51-.01 2.72-.01 3.09 0 .31.2.68.79.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── SLIDE 5: CONTACT PROFILE (hidden until CONTACT clicked) ── -->
+        <section class="slide slide-profile slide-profile--hidden" id="profile" data-reveal>
+            <!-- Close button -->
+            <button class="profile-close" id="profile-close-btn" aria-label="Close contact profile">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+
+            <div class="profile-grid">
+                <!-- Left: salmon panel -->
+                <div class="profile-left">
+                    <div class="profile-photo">
+                        <img src="files/AryanDAS.jpg" alt="Aryan Das headshot">
+                    </div>
+                    <div class="profile-identity">
+                        <h2 class="profile-name animate-block" style="--delay:0.06s;"><span>Aryan Das (he/ his)</span></h2>
+                        <p class="profile-role animate-block" style="--delay:0.16s;"><span>Associate Data Scientist and Machine Learning Engineer</span></p>
+                    </div>
+                    <div class="profile-connect">
+                        <p class="profile-connect-label animate-block" style="--delay:0.24s; --block-color:#4b2615;"><span>CONNECT WITH ME</span></p>
+                        <div class="profile-social-row">
+                            <a class="profile-icon-btn" href="mailto:dasaryan715@gmail.com" aria-label="Email" id="profile-email-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg>
+                            </a>
+                            <a class="profile-icon-btn" href="https://www.instagram.com/iam_aryandas/" target="_blank" rel="noreferrer" aria-label="Instagram" id="profile-instagram-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                            </a>
+                            <a class="profile-icon-btn" href="https://www.linkedin.com/in/iam-aryandas/" target="_blank" rel="noreferrer" aria-label="LinkedIn" id="profile-linkedin-btn">
+                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.66H9.36V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.55V9h3.57v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45C23.2 24 24 23.23 24 22.27V1.73C24 .77 23.2 0 22.22 0z"/></svg>
+                            </a>
+                            <a class="profile-icon-btn" href="https://github.com/aryandas079" target="_blank" rel="noreferrer" aria-label="GitHub" id="profile-github-btn">
+                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.57.11.78-.25.78-.56 0-.27-.01-1.15-.02-2.09-3.2.7-3.88-1.36-3.88-1.36-.52-1.32-1.28-1.68-1.28-1.68-1.04-.71.08-.69.08-.69 1.15.08 1.75 1.18 1.75 1.18 1.02 1.75 2.68 1.25 3.33.95.1-.74.4-1.25.72-1.53-2.55-.29-5.23-1.27-5.23-5.66 0-1.25.45-2.28 1.18-3.09-.12-.29-.51-1.45.11-3.03 0 0 .96-.31 3.14 1.18A10.93 10.93 0 0 1 12 5.83c.97 0 1.95.13 2.86.39 2.18-1.49 3.14-1.18 3.14-1.18.62 1.58.23 2.74.11 3.03.73.81 1.18 1.84 1.18 3.09 0 4.4-2.68 5.36-5.24 5.65.41.35.78 1.03.78 2.09 0 1.51-.01 2.72-.01 3.09 0 .31.2.68.79.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: white panel -->
+                <div class="profile-right">
+                    <p class="profile-eyebrow animate-block" style="--delay:0.04s; --block-color:#4b2615;"><span>ABOUT ME</span></p>
+                    <h3 class="profile-tagline animate-block" style="--delay:0.12s;"><span>Enginuity is my key</span></h3>
+                    <p class="profile-para animate-block" style="--delay:0.2s;">
+                        <span>First-year Electrical Engineering student at NIT Silchar, focused on systems and AI. Skilled in C++ and Python, with strong foundations in DSA and hands-on ML.<br>CS50x (Harvard) | Associate Data Scientist (DataCamp)<br>C++ | Python | DSA | AI/ML | NIT Silchar '29</span>
+                    </p>
+
+                    <div class="profile-hr"></div>
+
+                    <p class="profile-section-label animate-block" style="--delay:0.28s; --block-color:#4b2615;"><span>Education</span></p>
+                    <div class="profile-edu-row">
+                        <span class="profile-edu-years animate-block" style="--delay:0.34s;"><span>2025-2029</span></span>
+                        <div>
+                            <p class="profile-edu-degree animate-block" style="--delay:0.38s;"><span>Bachelor of Technology, NIT Silchar</span></p>
+                            <p class="profile-edu-info animate-block" style="--delay:0.44s;"><span>Electrical Engineering Majors</span></p>
+                            <p class="profile-edu-info animate-block" style="--delay:0.48s;"><span>GPA of 8.11 / 10.00</span></p>
+                        </div>
+                    </div>
+
+                    <div class="profile-bottom-bar">
+                        <a class="btn-resume animate-block" href="files/Profile.pdf" target="_blank" rel="noopener" id="profile-resume-btn" style="--delay:0.54s; --block-color:#111;"><span>Resume</span></a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script src="site.js?v=1.1"></script>
 </body>
 </html>
