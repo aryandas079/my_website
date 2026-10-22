@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'motion/react';
-import { assetPath } from '../utils/assetPath';
 
 export const SPECIALTIES: string[] = [
   'Innovation',
@@ -71,14 +70,6 @@ export const SpecialtyRoller: React.FC<SpecialtyRollerProps> = ({
       }}
       className="relative w-full h-full flex items-center justify-start overflow-hidden select-none pl-0.5 sm:pl-2 lg:pl-4"
     >
-      {/* Hidden reference asset */}
-      <img
-        src={assetPath('/assets/aistudio/image_add5823f.png')}
-        alt="Specialty Vertical Roller Reference"
-        referrerPolicy="no-referrer"
-        className="sr-only"
-      />
-
       {/* Vertical cylinder mask so words entering at bottom & leaving at top fade smoothly */}
       <div
         className="relative w-full h-[220px] sm:h-[360px] lg:h-[470px] flex items-center"

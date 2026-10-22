@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ArrowUpRight, Globe, RotateCw } from 'lucide-react';
 import { GitHubLogo } from './FooterIcons';
-import { assetPath } from '../utils/assetPath';
 
 export interface ProjectRoadmapItem {
   id: string;
@@ -112,8 +111,8 @@ function processTransparentLogo(src: string): Promise<string> {
 }
 
 if (typeof window !== 'undefined') {
-  processTransparentLogo(assetPath('/assets/aistudio/logo_a18a5885.png'));
-  processTransparentLogo(assetPath('/assets/aistudio/image_cf7c252e.png'));
+  processTransparentLogo('/assets/projects/vibes-music.png');
+  processTransparentLogo('/assets/projects/erms-leaf.png');
 }
 
 /**
@@ -155,105 +154,73 @@ const TransparentAssetLogo: React.FC<{
 };
 
 /**
- * 1. Haze Browser Logo (Three sweeping diagonal blades from /assets/aistudio/image_6ecedd71.png)
+ * 1. Haze Browser Logo (Three sweeping diagonal blades)
  */
 const HazeBrowserLogo: React.FC<{ className?: string }> = ({
   className = 'w-7 h-7',
 }) => (
-  <>
-    <img
-      src={assetPath('/assets/aistudio/image_6ecedd71.png')}
-      alt="Haze Browser Reference"
-      referrerPolicy="no-referrer"
-      className="sr-only"
+  <svg
+    viewBox="0 0 36 36"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+  >
+    <path
+      d="M6.5 18.8C11.2 14.2 19.6 10.6 28.4 9.5C29.3 9.4 29.6 10.5 28.8 11C21.5 14.8 13.8 17.8 7.3 20.1C6.4 20.4 5.9 19.4 6.5 18.8Z"
+      fill="#191919"
     />
-    <svg
-      viewBox="0 0 36 36"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-    >
-      <path
-        d="M6.5 18.8C11.2 14.2 19.6 10.6 28.4 9.5C29.3 9.4 29.6 10.5 28.8 11C21.5 14.8 13.8 17.8 7.3 20.1C6.4 20.4 5.9 19.4 6.5 18.8Z"
-        fill="#191919"
-      />
-      <path
-        d="M8.2 23.2C13.4 18.8 21.4 15.4 29.8 14.2C30.6 14.1 30.9 15.1 30.1 15.6C23.1 19.2 15.5 22.1 9 24.4C8.1 24.7 7.6 23.7 8.2 23.2Z"
-        fill="#191919"
-        fillOpacity="0.62"
-      />
-      <path
-        d="M10.2 27.3C15.2 23.3 22.6 20.1 30.4 18.9C31.2 18.8 31.5 19.8 30.7 20.3C24.1 23.6 17.1 26.3 11 28.5C10.1 28.8 9.6 27.8 10.2 27.3Z"
-        fill="#191919"
-        fillOpacity="0.34"
-      />
-    </svg>
-  </>
+    <path
+      d="M8.2 23.2C13.4 18.8 21.4 15.4 29.8 14.2C30.6 14.1 30.9 15.1 30.1 15.6C23.1 19.2 15.5 22.1 9 24.4C8.1 24.7 7.6 23.7 8.2 23.2Z"
+      fill="#191919"
+      fillOpacity="0.62"
+    />
+    <path
+      d="M10.2 27.3C15.2 23.3 22.6 20.1 30.4 18.9C31.2 18.8 31.5 19.8 30.7 20.3C24.1 23.6 17.1 26.3 11 28.5C10.1 28.8 9.6 27.8 10.2 27.3Z"
+      fill="#191919"
+      fillOpacity="0.34"
+    />
+  </svg>
 );
 
 /**
- * 2. Vibes Logo (Uploaded Sine Wave & Magnifying Glass Icon: /assets/aistudio/logo_a18a5885.png)
+ * 2. Vibes Logo (Sine Wave & Magnifying Glass Icon)
  */
 const VibesLogo: React.FC<{ className?: string }> = ({
   className = 'w-7 h-7',
 }) => (
-  <>
-    <img
-      src={assetPath('/assets/aistudio/image_d4e1bbda.png')}
-      alt="Vibes Reference"
-      referrerPolicy="no-referrer"
-      className="sr-only"
-    />
-    <TransparentAssetLogo
-      src={assetPath('/assets/aistudio/logo_a18a5885.png')}
-      alt="Vibes Sine & Magnify Logo"
-      className={className}
-    />
-  </>
+  <TransparentAssetLogo
+    src="/assets/projects/vibes-music.png"
+    alt="Vibes Sine & Magnify Logo"
+    className={className}
+  />
 );
 
 /**
- * 3. IDLE Logo (Uploaded IDLE Icon: /assets/aistudio/image_7a369d0a.png)
+ * 3. IDLE Logo (IDLE Icon)
  */
 const IdleLogo: React.FC<{ className?: string }> = ({
   className = 'w-7 h-7',
 }) => (
-  <>
-    <img
-      src={assetPath('/assets/aistudio/image_4f8b328c.png')}
-      alt="IDLE Reference"
-      referrerPolicy="no-referrer"
-      className="sr-only"
-    />
-    <img
-      src={assetPath('/assets/aistudio/image_7a369d0a.png')}
-      alt="IDLE Logo"
-      referrerPolicy="no-referrer"
-      draggable={false}
-      className={`${className} rounded-lg object-contain select-none`}
-    />
-  </>
+  <img
+    src="/assets/projects/idle-portfolio.png"
+    alt="IDLE Logo"
+    referrerPolicy="no-referrer"
+    draggable={false}
+    className={`${className} rounded-lg object-contain select-none`}
+  />
 );
 
 /**
- * 4. ERMS Logo (Uploaded Green Leaf Icon: /assets/aistudio/image_cf7c252e.png)
+ * 4. ERMS Logo (Green Leaf Icon)
  */
 const ErmsLogo: React.FC<{ className?: string }> = ({
   className = 'w-7 h-7',
 }) => (
-  <>
-    <img
-      src={assetPath('/assets/aistudio/image_c6e4c4d0.png')}
-      alt="ERMS Reference"
-      referrerPolicy="no-referrer"
-      className="sr-only"
-    />
-    <TransparentAssetLogo
-      src={assetPath('/assets/aistudio/image_cf7c252e.png')}
-      alt="ERMS Green Leaf Logo"
-      className={className}
-    />
-  </>
+  <TransparentAssetLogo
+    src="/assets/projects/erms-leaf.png"
+    alt="ERMS Green Leaf Logo"
+    className={className}
+  />
 );
 
 export const ROADMAP_PROJECTS: ProjectRoadmapItem[] = [
@@ -363,8 +330,8 @@ export const ProjectsRoadmap: React.FC<{ isDark?: boolean }> = ({
 
   // Pre-warm project logo assets on mount so 3D card flips never block the main thread
   useEffect(() => {
-    processTransparentLogo(assetPath('/assets/aistudio/logo_a18a5885.png'));
-    processTransparentLogo(assetPath('/assets/aistudio/image_cf7c252e.png'));
+    processTransparentLogo('/assets/projects/vibes-music.png');
+    processTransparentLogo('/assets/projects/erms-leaf.png');
   }, []);
 
   useEffect(() => {
@@ -402,38 +369,6 @@ export const ProjectsRoadmap: React.FC<{ isDark?: boolean }> = ({
       className="relative w-full h-full flex flex-col items-center justify-center px-4 sm:px-8 py-6 overflow-hidden select-none"
       onClick={handleBackgroundClick}
     >
-      {/* Hidden reference assets */}
-      <img
-        src={assetPath('/assets/aistudio/image_9047e770.png')}
-        alt="Skills Reference"
-        referrerPolicy="no-referrer"
-        className="sr-only"
-      />
-      <img
-        src={assetPath('/assets/aistudio/image_48b46a1b.png')}
-        alt="Card Orientation Reference"
-        referrerPolicy="no-referrer"
-        className="sr-only"
-      />
-      <img
-        src={assetPath('/assets/aistudio/image_7c035239.png')}
-        alt="Solid Popout Reference"
-        referrerPolicy="no-referrer"
-        className="sr-only"
-      />
-      <img
-        src={assetPath('/assets/aistudio/image_84a079de.png')}
-        alt="Projects Folder Reference"
-        referrerPolicy="no-referrer"
-        className="sr-only"
-      />
-      <img
-        src={assetPath('/assets/aistudio/image_a5a31c36.png')}
-        alt="Projects Folder Transparency Reference"
-        referrerPolicy="no-referrer"
-        className="sr-only"
-      />
-
       {/* ===================================================================
           CENTERPIECE WALLET-STACKED FOLDER & 2x2 GRID ASSEMBLY
           - Before clicking folder: 4 Horizontal Rectangular White Cards stacked

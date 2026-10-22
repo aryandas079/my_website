@@ -13,7 +13,7 @@ interface BandConfig {
   parallaxFactor: number;
 }
 
-// 7 horizontal cylindrical bands matching /assets/aistudio/image_64a6b47f.png
+// 7 horizontal cylindrical bands
 const BANDS: BandConfig[] = [
   {
     id: 'band-0',

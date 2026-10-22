@@ -24,11 +24,10 @@ import { ProjectsRoadmap } from './components/ProjectsRoadmap';
 import { CredentialsSection } from './components/CredentialsSection';
 import { SlicedNameRoller } from './components/SlicedNameRoller';
 import { SpecialtyRoller } from './components/SpecialtyRoller';
-import { assetPath } from './utils/assetPath';
 
-const HERO_IMAGE_PATH = assetPath('/assets/aistudio/image_549e2055.png');
-const NIT_SILCHAR_LOGO_PATH = assetPath('/assets/aistudio/image_3a90b951.png');
-const GURUCHARAN_LOGO_PATH = assetPath('/assets/aistudio/image_8fe961f3.png');
+const HERO_IMAGE_PATH = '/assets/portrait/aryan-portrait.png';
+const NIT_SILCHAR_LOGO_PATH = '/assets/logos/nit-silchar.png';
+const GURUCHARAN_LOGO_PATH = '/assets/logos/gurucharan-college.png';
 
 type FooterPopoutId = 'mail' | 'nits' | 'gcc' | 'languages' | null;
 
@@ -353,13 +352,6 @@ export default function App() {
 
           {/* Top-Right Controls: Theme Toggle (Sun/Moon) + Long Horizontal Arrow inside Liquid Glass Buttons */}
           <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0">
-            {/* Hidden reference asset for theme toggle placement */}
-            <img
-              src={assetPath('/assets/aistudio/image_29381f68.png')}
-              alt="Theme Toggle Placement Reference"
-              referrerPolicy="no-referrer"
-              className="sr-only"
-            />
 
             {/* Theme Toggle Button with Sun / Moon Icon */}
             <motion.button
@@ -617,19 +609,6 @@ export default function App() {
                   : 'bg-white text-[#191919] border-black/15 shadow-[0_24px_64px_rgba(0,0,0,0.16)]'
               }`}
             >
-              {/* Hidden reference assets for skills segregation */}
-              <img
-                src={assetPath('/assets/aistudio/image_80f8f045.png')}
-                alt="Skills Grid Reference"
-                referrerPolicy="no-referrer"
-                className="sr-only"
-              />
-              <img
-                src={assetPath('/assets/aistudio/image_d9197c85.png')}
-                alt="Skills Segregation Reference"
-                referrerPolicy="no-referrer"
-                className="sr-only"
-              />
 
               {/* Top-Right Close Button to return to Skills View */}
               <motion.button
@@ -1028,25 +1007,6 @@ export default function App() {
           className="relative z-20 w-full max-w-[1100px] h-full px-4 sm:px-8 py-6 sm:py-10 flex flex-col items-center justify-between"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Hidden reference assets for the footer typography & layout */}
-          <img
-            src={assetPath('/assets/aistudio/image_ae9b3c4d.png')}
-            alt="Footer Layout Reference"
-            referrerPolicy="no-referrer"
-            className="sr-only"
-          />
-          <img
-            src={assetPath('/assets/aistudio/image_32fb019c.png')}
-            alt="Links Tab Reference"
-            referrerPolicy="no-referrer"
-            className="sr-only"
-          />
-          <img
-            src={assetPath('/assets/aistudio/image_64a6b47f.png')}
-            alt="Sliced Typography Reference"
-            referrerPolicy="no-referrer"
-            className="sr-only"
-          />
 
           {/* TOP / CENTER: INTERACTIVE SLICED CYLINDRICAL DISPLAY TYPOGRAPHY — "ARYAN DAS"
               Scrollable with mouse cursor/wheel and swipable with touch */}

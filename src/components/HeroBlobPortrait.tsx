@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { assetPath } from '../utils/assetPath';
 
 interface CutoutPortraitProps {
   imageSrc: string;
@@ -139,7 +138,7 @@ function processCutoutPortrait(imageSrc: string): Promise<string> {
 
 // Pre-warm hero portrait immediately on module evaluation
 if (typeof window !== 'undefined') {
-  processCutoutPortrait(assetPath('/assets/aistudio/image_549e2055.png'));
+  processCutoutPortrait('/assets/portrait/aryan-portrait.png');
 }
 
 /**
