@@ -1,0 +1,169 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Anton", Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+/* Custom Tailless Black Triangular Cursor across the entire webpage on pointer devices */
+@media (pointer: fine) {
+  *,
+  *::before,
+  *::after {
+    cursor: none !important;
+  }
+}
+
+/* Hide native scrollbar while preserving ultra-smooth continuous scrolling */
+.smooth-scroll-container {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  will-change: scroll-position;
+}
+
+.smooth-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Wireframe outline stroke for the front PORTFOLIO text layer */
+.portfolio-stroke-dark {
+  color: transparent;
+  -webkit-text-stroke: clamp(1.35px, 0.17vw, 2.25px) rgba(234, 224, 200, 0.92);
+  filter: drop-shadow(0 2px 12px rgba(234, 224, 200, 0.18));
+  transition: -webkit-text-stroke 500ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.portfolio-stroke-light {
+  color: transparent;
+  -webkit-text-stroke: clamp(1.35px, 0.17vw, 2.25px) rgba(25, 25, 25, 0.9);
+  filter: drop-shadow(0 2px 12px rgba(0, 0, 0, 0.1));
+  transition: -webkit-text-stroke 500ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ============================================================================
+   LIQUID GLASS SYSTEM (Dark & Light Theme Specular Refraction)
+   Note: Transform animations are handled exclusively by Motion springs to
+   prevent CSS/JS transform contention and ensure 60/120fps smoothness.
+============================================================================ */
+
+/* Dark Theme Liquid Glass Surface */
+.liquid-glass-dark {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.03) 50%,
+    rgba(234, 224, 200, 0.06) 100%
+  );
+  backdrop-filter: blur(24px) saturate(185%);
+  -webkit-backdrop-filter: blur(24px) saturate(185%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.45),
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.35),
+    inset 0 -1px 2px rgba(234, 224, 200, 0.12),
+    inset 1px 0 1px rgba(255, 255, 255, 0.14);
+  transform: translateZ(0);
+  transition:
+    background 500ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 500ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Light Theme Liquid Glass Surface */
+.liquid-glass-light {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.68) 0%,
+    rgba(255, 255, 255, 0.36) 50%,
+    rgba(255, 255, 255, 0.58) 100%
+  );
+  backdrop-filter: blur(24px) saturate(185%);
+  -webkit-backdrop-filter: blur(24px) saturate(185%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 18px 42px rgba(25, 25, 25, 0.08),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.95),
+    inset 0 -1px 2px rgba(25, 25, 25, 0.06),
+    inset 1px 0 1.5px rgba(255, 255, 255, 0.8);
+  transform: translateZ(0);
+  transition:
+    background 500ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 500ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Interactive Liquid Glass Button / Control */
+.liquid-glass-btn-dark {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.14) 0%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  backdrop-filter: blur(18px) saturate(175%);
+  -webkit-backdrop-filter: blur(18px) saturate(175%);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.42),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.25);
+  transition:
+    background 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.liquid-glass-btn-dark:hover {
+  border-color: rgba(234, 224, 200, 0.5);
+  box-shadow:
+    0 14px 32px rgba(0, 0, 0, 0.5),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.55);
+}
+
+.liquid-glass-btn-light {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.82) 0%,
+    rgba(255, 255, 255, 0.48) 100%
+  );
+  backdrop-filter: blur(18px) saturate(175%);
+  -webkit-backdrop-filter: blur(18px) saturate(175%);
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 8px 24px rgba(25, 25, 25, 0.07),
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 1),
+    inset 0 -1px 1px rgba(25, 25, 25, 0.06);
+  transition:
+    background 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.liquid-glass-btn-light:hover {
+  border-color: rgba(25, 25, 25, 0.25);
+  box-shadow:
+    0 14px 32px rgba(25, 25, 25, 0.12),
+    inset 0 2px 2px rgba(255, 255, 255, 1);
+}
