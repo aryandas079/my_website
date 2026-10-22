@@ -63,7 +63,7 @@ export const PROFILE = {
     "C++ | Python | DSA | AI / ML | CS50x — Harvard | Associate Data Scientist | NIT Silchar '29",
   location: 'Silchar, Assam, India',
   email: 'aryandas.original@gmail.com',
-  pdfPath: '/assets/aistudio/Profile_3b6638c0.pdf',
+  pdfPath: assetPath('/assets/aistudio/Profile_3b6638c0.pdf'),
   summaryParagraphs: [
     "I'm Aryan Das and I'm from India. I just finished my 1st year of engineering majors in Electrical at NIT Silchar. I'm currently learning to code—not an expert yet, but picking up languages to enhance my future vision and prospects.",
     'That includes C++ and Python with libraries like Pandas, NumPy, Scikit-Learn, Matplotlib, and Seaborn, along with HTML, CSS, JavaScript, TypeScript, and frameworks like React, Node, Express, and Next... These languages are helping me a lot in building a strong foundation in Machine Learning, Data Science, and Full Stack Development... I plan to solve real-world problems and build useful solutions with my tech stack, and also create solutions in my core electrical field...',

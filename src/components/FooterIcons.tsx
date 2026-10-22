@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { assetPath } from '../utils/assetPath';
 
 const transparentLogoCache = new Map<string, string>();
 const transparentLogoInflight = new Map<string, Promise<string>>();
@@ -82,8 +83,8 @@ function processFooterLogo(src: string): Promise<string> {
 }
 
 if (typeof window !== 'undefined') {
-  processFooterLogo('/assets/aistudio/image_3a90b951.png');
-  processFooterLogo('/assets/aistudio/image_8fe961f3.png');
+  processFooterLogo(assetPath('/assets/aistudio/image_3a90b951.png'));
+  processFooterLogo(assetPath('/assets/aistudio/image_8fe961f3.png'));
 }
 
 /**

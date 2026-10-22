@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'motion/react';
+import { assetPath } from '../utils/assetPath';
 
 export const SPECIALTIES: string[] = [
   'Innovation',
@@ -72,7 +73,7 @@ export const SpecialtyRoller: React.FC<SpecialtyRollerProps> = ({
     >
       {/* Hidden reference asset */}
       <img
-        src="/assets/aistudio/image_add5823f.png"
+        src={assetPath('/assets/aistudio/image_add5823f.png')}
         alt="Specialty Vertical Roller Reference"
         referrerPolicy="no-referrer"
         className="sr-only"

@@ -24,10 +24,11 @@ import { ProjectsRoadmap } from './components/ProjectsRoadmap';
 import { CredentialsSection } from './components/CredentialsSection';
 import { SlicedNameRoller } from './components/SlicedNameRoller';
 import { SpecialtyRoller } from './components/SpecialtyRoller';
+import { assetPath } from './utils/assetPath';
 
-const HERO_IMAGE_PATH = '/assets/aistudio/image_549e2055.png';
-const NIT_SILCHAR_LOGO_PATH = '/assets/aistudio/image_3a90b951.png';
-const GURUCHARAN_LOGO_PATH = '/assets/aistudio/image_8fe961f3.png';
+const HERO_IMAGE_PATH = assetPath('/assets/aistudio/image_549e2055.png');
+const NIT_SILCHAR_LOGO_PATH = assetPath('/assets/aistudio/image_3a90b951.png');
+const GURUCHARAN_LOGO_PATH = assetPath('/assets/aistudio/image_8fe961f3.png');
 
 type FooterPopoutId = 'mail' | 'nits' | 'gcc' | 'languages' | null;
 
@@ -354,7 +355,7 @@ export default function App() {
           <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0">
             {/* Hidden reference asset for theme toggle placement */}
             <img
-              src="/assets/aistudio/image_29381f68.png"
+              src={assetPath('/assets/aistudio/image_29381f68.png')}
               alt="Theme Toggle Placement Reference"
               referrerPolicy="no-referrer"
               className="sr-only"
@@ -618,13 +619,13 @@ export default function App() {
             >
               {/* Hidden reference assets for skills segregation */}
               <img
-                src="/assets/aistudio/image_80f8f045.png"
+                src={assetPath('/assets/aistudio/image_80f8f045.png')}
                 alt="Skills Grid Reference"
                 referrerPolicy="no-referrer"
                 className="sr-only"
               />
               <img
-                src="/assets/aistudio/image_d9197c85.png"
+                src={assetPath('/assets/aistudio/image_d9197c85.png')}
                 alt="Skills Segregation Reference"
                 referrerPolicy="no-referrer"
                 className="sr-only"
@@ -1029,19 +1030,19 @@ export default function App() {
         >
           {/* Hidden reference assets for the footer typography & layout */}
           <img
-            src="/assets/aistudio/image_ae9b3c4d.png"
+            src={assetPath('/assets/aistudio/image_ae9b3c4d.png')}
             alt="Footer Layout Reference"
             referrerPolicy="no-referrer"
             className="sr-only"
           />
           <img
-            src="/assets/aistudio/image_32fb019c.png"
+            src={assetPath('/assets/aistudio/image_32fb019c.png')}
             alt="Links Tab Reference"
             referrerPolicy="no-referrer"
             className="sr-only"
           />
           <img
-            src="/assets/aistudio/image_64a6b47f.png"
+            src={assetPath('/assets/aistudio/image_64a6b47f.png')}
             alt="Sliced Typography Reference"
             referrerPolicy="no-referrer"
             className="sr-only"

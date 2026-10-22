@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ArrowUpRight, Globe, RotateCw } from 'lucide-react';
 import { GitHubLogo } from './FooterIcons';
+import { assetPath } from '../utils/assetPath';
 
 export interface ProjectRoadmapItem {
   id: string;
@@ -111,8 +112,8 @@ function processTransparentLogo(src: string): Promise<string> {
 }
 
 if (typeof window !== 'undefined') {
-  processTransparentLogo('/assets/aistudio/logo_a18a5885.png');
-  processTransparentLogo('/assets/aistudio/image_cf7c252e.png');
+  processTransparentLogo(assetPath('/assets/aistudio/logo_a18a5885.png'));
+  processTransparentLogo(assetPath('/assets/aistudio/image_cf7c252e.png'));
 }
 
 /**
@@ -161,7 +162,7 @@ const HazeBrowserLogo: React.FC<{ className?: string }> = ({
 }) => (
   <>
     <img
-      src="/assets/aistudio/image_6ecedd71.png"
+      src={assetPath('/assets/aistudio/image_6ecedd71.png')}
       alt="Haze Browser Reference"
       referrerPolicy="no-referrer"
       className="sr-only"
@@ -198,13 +199,13 @@ const VibesLogo: React.FC<{ className?: string }> = ({
 }) => (
   <>
     <img
-      src="/assets/aistudio/image_d4e1bbda.png"
+      src={assetPath('/assets/aistudio/image_d4e1bbda.png')}
       alt="Vibes Reference"
       referrerPolicy="no-referrer"
       className="sr-only"
     />
     <TransparentAssetLogo
-      src="/assets/aistudio/logo_a18a5885.png"
+      src={assetPath('/assets/aistudio/logo_a18a5885.png')}
       alt="Vibes Sine & Magnify Logo"
       className={className}
     />
@@ -219,13 +220,13 @@ const IdleLogo: React.FC<{ className?: string }> = ({
 }) => (
   <>
     <img
-      src="/assets/aistudio/image_4f8b328c.png"
+      src={assetPath('/assets/aistudio/image_4f8b328c.png')}
       alt="IDLE Reference"
       referrerPolicy="no-referrer"
       className="sr-only"
     />
     <img
-      src="/assets/aistudio/image_7a369d0a.png"
+      src={assetPath('/assets/aistudio/image_7a369d0a.png')}
       alt="IDLE Logo"
       referrerPolicy="no-referrer"
       draggable={false}
@@ -242,13 +243,13 @@ const ErmsLogo: React.FC<{ className?: string }> = ({
 }) => (
   <>
     <img
-      src="/assets/aistudio/image_c6e4c4d0.png"
+      src={assetPath('/assets/aistudio/image_c6e4c4d0.png')}
       alt="ERMS Reference"
       referrerPolicy="no-referrer"
       className="sr-only"
     />
     <TransparentAssetLogo
-      src="/assets/aistudio/image_cf7c252e.png"
+      src={assetPath('/assets/aistudio/image_cf7c252e.png')}
       alt="ERMS Green Leaf Logo"
       className={className}
     />
@@ -362,8 +363,8 @@ export const ProjectsRoadmap: React.FC<{ isDark?: boolean }> = ({
 
   // Pre-warm project logo assets on mount so 3D card flips never block the main thread
   useEffect(() => {
-    processTransparentLogo('/assets/aistudio/logo_a18a5885.png');
-    processTransparentLogo('/assets/aistudio/image_cf7c252e.png');
+    processTransparentLogo(assetPath('/assets/aistudio/logo_a18a5885.png'));
+    processTransparentLogo(assetPath('/assets/aistudio/image_cf7c252e.png'));
   }, []);
 
   useEffect(() => {
@@ -403,31 +404,31 @@ export const ProjectsRoadmap: React.FC<{ isDark?: boolean }> = ({
     >
       {/* Hidden reference assets */}
       <img
-        src="/assets/aistudio/image_9047e770.png"
+        src={assetPath('/assets/aistudio/image_9047e770.png')}
         alt="Skills Reference"
         referrerPolicy="no-referrer"
         className="sr-only"
       />
       <img
-        src="/assets/aistudio/image_48b46a1b.png"
+        src={assetPath('/assets/aistudio/image_48b46a1b.png')}
         alt="Card Orientation Reference"
         referrerPolicy="no-referrer"
         className="sr-only"
       />
       <img
-        src="/assets/aistudio/image_7c035239.png"
+        src={assetPath('/assets/aistudio/image_7c035239.png')}
         alt="Solid Popout Reference"
         referrerPolicy="no-referrer"
         className="sr-only"
       />
       <img
-        src="/assets/aistudio/image_84a079de.png"
+        src={assetPath('/assets/aistudio/image_84a079de.png')}
         alt="Projects Folder Reference"
         referrerPolicy="no-referrer"
         className="sr-only"
       />
       <img
-        src="/assets/aistudio/image_a5a31c36.png"
+        src={assetPath('/assets/aistudio/image_a5a31c36.png')}
         alt="Projects Folder Transparency Reference"
         referrerPolicy="no-referrer"
         className="sr-only"
