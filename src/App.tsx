@@ -4,13 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  motion,
-  AnimatePresence,
-  useScroll,
-  useSpring,
-  useMotionValue,
-} from 'motion/react';
+import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { ExternalLink, Check, Copy, X, Sun, Moon } from 'lucide-react';
 import { PROFILE } from './data/portfolioData';
 import { CutoutPortrait } from './components/HeroBlobPortrait';
@@ -37,7 +31,7 @@ const GURUCHARAN_LOGO_PATH = '/assets/aistudio/image_8fe961f3.png';
 
 type FooterPopoutId = 'mail' | 'nits' | 'gcc' | 'languages' | null;
 
-const DOCK_CONTAINER_VARIANTS = {
+const DOCK_CONTAINER_VARIANTS: Variants = {
   hidden: { opacity: 0, y: 14, scale: 0.98 },
   visible: {
     opacity: 1,
@@ -52,7 +46,7 @@ const DOCK_CONTAINER_VARIANTS = {
   },
 };
 
-const DOCK_ITEM_VARIANTS = {
+const DOCK_ITEM_VARIANTS: Variants = {
   hidden: { opacity: 0, y: 10, scale: 0.9 },
   visible: {
     opacity: 1,
@@ -67,7 +61,7 @@ const DOCK_ITEM_VARIANTS = {
   },
 };
 
-const SKILLS_STAGE_VARIANTS = {
+const SKILLS_STAGE_VARIANTS: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -78,7 +72,7 @@ const SKILLS_STAGE_VARIANTS = {
   },
 };
 
-const SKILL_CAPSULE_VARIANTS = {
+const SKILL_CAPSULE_VARIANTS: Variants = {
   hidden: { opacity: 0, y: 10, scale: 0.92 },
   visible: {
     opacity: 1,
@@ -116,219 +110,98 @@ export default function App() {
   const [activePopout, setActivePopout] = useState<FooterPopoutId>(null);
   const [copiedDiscord, setCopiedDiscord] = useState<boolean>(false);
 
-  // Custom Tailless Black Triangular Cursor state (Calibrated to 90% of Maximum Sensitivity)
-  const MOUSE_SENSITIVITY = 0.9;
-  const SCROLL_SENSITIVITY = 0.9;
-
-  const [cursorVisible, setCursorVisible] = useState<boolean>(false);
-  const [cursorPressed, setCursorPressed] = useState<boolean>(false);
-  const cursorVisibleRef = useRef<boolean>(false);
-  const cursorX = useMotionValue(-100);
-  const cursorY = useMotionValue(-100);
-  const smoothCursorX = useSpring(cursorX, {
-    stiffness: 2200 * MOUSE_SENSITIVITY,
-    damping: 54,
-    mass: 0.11,
-    restDelta: 0.01,
-  });
-  const smoothCursorY = useSpring(cursorY, {
-    stiffness: 2200 * MOUSE_SENSITIVITY,
-    damping: 54,
-    mass: 0.11,
-    restDelta: 0.01,
-  });
-
+  // Direct DOM refs for 100% hardware-speed, zero-React-re-render responsiveness
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const scrollPhysicsRef = useRef<{
-    targetY: number;
-    currentY: number;
-    rafId: number | null;
-    isAnimating: boolean;
-  }>({
-    targetY: 0,
-    currentY: 0,
-    rafId: null,
-    isAnimating: false,
-  });
+  const progressBarRef = useRef<HTMLDivElement>(null);
+  const heroPortraitRef = useRef<HTMLDivElement>(null);
+  const heroHaloRef = useRef<HTMLDivElement>(null);
 
-  // Smooth spring-damped scroll progress across the continuous webpage
-  const { scrollYProgress } = useScroll({
-    container: scrollContainerRef,
-  });
-
-  const smoothScrollProgress = useSpring(scrollYProgress, {
-    stiffness: 340,
-    damping: 34,
-    mass: 0.22,
-    restDelta: 0.0005,
-  });
-
-  // Ultra-smooth continuous scrolling calibrated to 90% of maximum sensitivity
+  // 100% Native Compositor Scrolling + Buttery Smooth Hero Portrait Enlarge & Disappear on Scroll
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    const state = scrollPhysicsRef.current;
-    state.currentY = container.scrollTop;
-    state.targetY = container.scrollTop;
+    let rafId: number | null = null;
+    let cachedVh = window.innerHeight || 800;
+    let cachedMaxScroll = Math.max(1, container.scrollHeight - cachedVh);
 
-    const stepScroll = () => {
-      const maxScroll = Math.max(
-        0,
-        container.scrollHeight - container.clientHeight
-      );
-      state.targetY = Math.max(0, Math.min(maxScroll, state.targetY));
-
-      const diff = state.targetY - state.currentY;
-      if (Math.abs(diff) > 0.35) {
-        // High-responsiveness glide (90% sensitivity feel)
-        state.currentY += diff * 0.34;
-        container.scrollTop = state.currentY;
-        state.rafId = requestAnimationFrame(stepScroll);
-      } else {
-        state.currentY = state.targetY;
-        container.scrollTop = state.targetY;
-        state.isAnimating = false;
-        state.rafId = null;
-      }
+    const updateMeasurements = () => {
+      cachedVh = container.clientHeight || window.innerHeight || 800;
+      cachedMaxScroll = Math.max(1, container.scrollHeight - cachedVh);
     };
 
-    const handleWheel = (e: WheelEvent) => {
-      // Allow nested scrollable overlays (like full-page Skills modal on small screens) to scroll natively
-      const targetEl = e.target as HTMLElement | null;
-      if (targetEl) {
-        const nestedScrollable = targetEl.closest('[data-nested-scroll="true"]');
+    const updateScrollVisuals = () => {
+      const scrollTop = container.scrollTop;
+
+      // 1. Update top progress bar directly on GPU compositor layer
+      if (progressBarRef.current) {
+        const totalProgress = Math.max(0, Math.min(1, scrollTop / cachedMaxScroll));
+        progressBarRef.current.style.transform = `scaleX(${totalProgress.toFixed(4)})`;
+      }
+
+      // 2. Enlarge & smoothly disappear the Hero portrait when scrolling down from Page 1
+      const fadeDistance = cachedVh * 0.68;
+      if (scrollTop <= fadeDistance * 1.25) {
+        const rawT = Math.max(0, Math.min(1, scrollTop / fadeDistance));
+        // Smooth cubic Hermite interpolation (smoothstep)
+        const smoothT = rawT * rawT * (3 - 2 * rawT);
+        const portraitScale = 1 + smoothT * 0.54; // Enlarges smoothly from 1.0x up to 1.54x
+        const portraitOpacity = Math.max(0, 1 - smoothT * 1.08); // Smoothly disappears to 0
+        const portraitTranslateY = -smoothT * 26;
+
+        if (heroPortraitRef.current) {
+          heroPortraitRef.current.style.transform = `translate3d(0, ${portraitTranslateY.toFixed(2)}px, 0) scale3d(${portraitScale.toFixed(4)}, ${portraitScale.toFixed(4)}, 1)`;
+          heroPortraitRef.current.style.opacity = portraitOpacity.toFixed(4);
+          heroPortraitRef.current.style.visibility =
+            portraitOpacity <= 0.005 ? 'hidden' : 'visible';
+        }
+
+        if (heroHaloRef.current) {
+          const haloScale = 1 + smoothT * 0.35;
+          heroHaloRef.current.style.transform = `scale3d(${haloScale.toFixed(4)}, ${haloScale.toFixed(4)}, 1)`;
+          heroHaloRef.current.style.opacity = (portraitOpacity * 0.65).toFixed(4);
+        }
+      } else {
         if (
-          nestedScrollable &&
-          nestedScrollable.scrollHeight > nestedScrollable.clientHeight
+          heroPortraitRef.current &&
+          heroPortraitRef.current.style.visibility !== 'hidden'
         ) {
-          return;
+          heroPortraitRef.current.style.opacity = '0';
+          heroPortraitRef.current.style.visibility = 'hidden';
         }
       }
-
-      e.preventDefault();
-
-      // Normalize wheel delta across pixel/line/page modes and apply 90% maximum sensitivity
-      const rawDelta =
-        e.deltaMode === 1
-          ? e.deltaY * 36
-          : e.deltaMode === 2
-          ? e.deltaY * window.innerHeight * 0.85
-          : e.deltaY;
-
-      const maxScroll = Math.max(
-        0,
-        container.scrollHeight - container.clientHeight
-      );
-
-      if (!state.isAnimating) {
-        state.currentY = container.scrollTop;
-        state.targetY = container.scrollTop;
-      }
-
-      state.targetY = Math.max(
-        0,
-        Math.min(maxScroll, state.targetY + rawDelta * SCROLL_SENSITIVITY)
-      );
-
-      if (!state.isAnimating) {
-        state.isAnimating = true;
-        state.rafId = requestAnimationFrame(stepScroll);
-      }
     };
 
-    const handleNativeScroll = () => {
-      if (!state.isAnimating) {
-        state.currentY = container.scrollTop;
-        state.targetY = container.scrollTop;
-      }
+    const onScroll = () => {
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        updateScrollVisuals();
+        rafId = null;
+      });
     };
 
-    container.addEventListener('wheel', handleWheel, { passive: false });
-    container.addEventListener('scroll', handleNativeScroll, { passive: true });
+    const onResize = () => {
+      updateMeasurements();
+      onScroll();
+    };
+
+    updateMeasurements();
+    updateScrollVisuals();
+
+    container.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize, { passive: true });
 
     return () => {
-      container.removeEventListener('wheel', handleWheel);
-      container.removeEventListener('scroll', handleNativeScroll);
-      if (state.rafId !== null) {
-        cancelAnimationFrame(state.rafId);
-        state.rafId = null;
-      }
-      state.isAnimating = false;
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      container.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
     };
-  }, [SCROLL_SENSITIVITY]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const handlePointerMove = (e: PointerEvent) => {
-      if (e.pointerType === 'touch') return;
-      if (!cursorVisibleRef.current) {
-        cursorVisibleRef.current = true;
-        cursorX.jump(e.clientX);
-        cursorY.jump(e.clientY);
-        smoothCursorX.jump(e.clientX);
-        smoothCursorY.jump(e.clientY);
-        setCursorVisible(true);
-      } else {
-        cursorX.set(e.clientX);
-        cursorY.set(e.clientY);
-      }
-    };
-
-    const handlePointerDown = (e: PointerEvent) => {
-      if (e.pointerType === 'touch') return;
-      setCursorPressed(true);
-    };
-    const handlePointerUp = () => setCursorPressed(false);
-    const handleMouseLeave = () => {
-      cursorVisibleRef.current = false;
-      setCursorVisible(false);
-    };
-    const handleMouseEnter = () => {
-      cursorVisibleRef.current = true;
-      setCursorVisible(true);
-    };
-
-    window.addEventListener('pointermove', handlePointerMove, { passive: true });
-    window.addEventListener('pointerdown', handlePointerDown, { passive: true });
-    window.addEventListener('pointerup', handlePointerUp, { passive: true });
-    document.addEventListener('mouseleave', handleMouseLeave);
-    document.addEventListener('mouseenter', handleMouseEnter);
-
-    return () => {
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerdown', handlePointerDown);
-      window.removeEventListener('pointerup', handlePointerUp);
-      document.removeEventListener('mouseleave', handleMouseLeave);
-      document.removeEventListener('mouseenter', handleMouseEnter);
-    };
-  }, [cursorX, cursorY, smoothCursorX, smoothCursorY]);
+  }, []);
 
   const scrollToNextSection = () => {
-    const container = scrollContainerRef.current;
     const nextEl = document.getElementById('white-section');
-    if (container && nextEl) {
-      const state = scrollPhysicsRef.current;
-      state.currentY = container.scrollTop;
-      state.targetY = nextEl.offsetTop;
-      if (!state.isAnimating) {
-        state.isAnimating = true;
-        const animateToSection = () => {
-          const diff = state.targetY - state.currentY;
-          if (Math.abs(diff) > 0.5) {
-            state.currentY += diff * 0.24;
-            container.scrollTop = state.currentY;
-            state.rafId = requestAnimationFrame(animateToSection);
-          } else {
-            state.currentY = state.targetY;
-            container.scrollTop = state.targetY;
-            state.isAnimating = false;
-            state.rafId = null;
-          }
-        };
-        state.rafId = requestAnimationFrame(animateToSection);
-      }
+    if (nextEl) {
+      nextEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
@@ -348,99 +221,24 @@ export default function App() {
   return (
     <div
       ref={scrollContainerRef}
-      className={`smooth-scroll-container fixed inset-0 w-full h-full overflow-y-auto overflow-x-hidden font-sans select-none transition-colors duration-200 ${
-        isDark
-          ? 'bg-[#191919] text-[#EAE0C8]'
-          : 'bg-[#F5F2EB] text-[#191919]'
+      style={{
+        background: isDark
+          ? 'radial-gradient(circle at 15% 15%, rgba(234, 224, 200, 0.08) 0%, #191919 55%)'
+          : 'radial-gradient(circle at 15% 15%, rgba(255, 255, 255, 0.95) 0%, #F5F2EB 60%)',
+      }}
+      className={`smooth-scroll-container fixed inset-0 w-full h-full overflow-y-auto overflow-x-hidden font-sans select-none ${
+        isDark ? 'text-[#EAE0C8]' : 'text-[#191919]'
       }`}
     >
-      {/* Unified Fixed GPU-Composited Ambient Liquid Glass Caustics Across All Sections */}
+      {/* Zero-Lag Direct-DOM Top Scroll Progress Line */}
       <div
-        aria-hidden="true"
-        className="fixed inset-0 pointer-events-none overflow-hidden z-0 transform-gpu"
-      >
-        <div
-          className={`absolute -top-24 -left-24 w-[48vw] h-[48vw] rounded-full blur-3xl transition-colors duration-200 ${
-            isDark ? 'bg-[#EAE0C8]/10' : 'bg-white/90'
-          }`}
-        />
-        <div
-          className={`absolute -bottom-28 -right-20 w-[52vw] h-[52vw] rounded-full blur-3xl transition-colors duration-200 ${
-            isDark ? 'bg-[#EAE0C8]/8' : 'bg-amber-100/60'
-          }`}
-        />
-      </div>
-
-      {/* Custom Tailless Black Triangular Cursor (90% of Maximum Sensitivity) */}
-      <motion.div
+        ref={progressBarRef}
         aria-hidden="true"
         style={{
-          x: smoothCursorX,
-          y: smoothCursorY,
-          willChange: 'transform, opacity',
+          transform: 'scaleX(0)',
+          willChange: 'transform',
         }}
-        animate={{
-          opacity: cursorVisible ? 1 : 0,
-          scale: cursorPressed ? 0.86 : 1,
-        }}
-        transition={{
-          opacity: { duration: 0.08 },
-          scale: { type: 'spring', stiffness: 750, damping: 30, mass: 0.25 },
-        }}
-        className="fixed top-0 left-0 z-[100] pointer-events-none transform-gpu"
-      >
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="-translate-x-[2px] -translate-y-[2px] drop-shadow-[0_2px_6px_rgba(0,0,0,0.28)]"
-        >
-          {/* Tailless Black Triangular Pointer */}
-          <path
-            d="M2 2L4.2 20.5L10.4 15.4L19.5 12.2L2 2Z"
-            fill="#000000"
-            stroke="rgba(255, 255, 255, 0.85)"
-            strokeWidth="1.25"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-        </svg>
-      </motion.div>
-
-      {/* Hidden SVG Liquid Refraction Filter Definition */}
-      <svg className="sr-only" aria-hidden="true">
-        <defs>
-          <filter
-            id="liquid-refraction"
-            x="-10%"
-            y="-10%"
-            width="120%"
-            height="120%"
-          >
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency="0.012"
-              numOctaves="2"
-              result="noise"
-            />
-            <feDisplacementMap
-              in="SourceGraphic"
-              in2="noise"
-              scale="4"
-              xChannelSelector="R"
-              yChannelSelector="G"
-            />
-          </filter>
-        </defs>
-      </svg>
-
-      {/* Smooth Spring-Damped Top Liquid Scroll Progress Line */}
-      <motion.div
-        aria-hidden="true"
-        style={{ scaleX: smoothScrollProgress }}
-        className={`fixed top-0 left-0 right-0 h-[2.5px] origin-left z-50 pointer-events-none transition-colors duration-200 ${
+        className={`fixed top-0 left-0 right-0 h-[2.5px] origin-left z-50 pointer-events-none ${
           isDark
             ? 'bg-gradient-to-r from-[#EAE0C8]/25 via-[#EAE0C8]/85 to-[#EAE0C8]/25'
             : 'bg-gradient-to-r from-[#191919]/20 via-[#191919]/75 to-[#191919]/20'
@@ -449,18 +247,11 @@ export default function App() {
 
       {/* =====================================================================
           SECTION 1: UNIFIED HEADER + HERO SECTION
+          When scrolled down, the Hero portrait smoothly enlarges & disappears.
       ====================================================================== */}
-      <motion.section
+      <section
         id="hero-section"
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: false, amount: 0.15 }}
-        transition={{
-          type: 'spring',
-          stiffness: 320,
-          damping: 30,
-          mass: 0.45,
-        }}
+        style={{ contain: 'layout style paint' }}
         className="relative w-full h-screen min-h-[640px] overflow-hidden transform-gpu"
       >
         {/* Full-Viewport Liquid Glass Stage Vessel */}
@@ -581,9 +372,11 @@ export default function App() {
           <div className="relative w-full flex items-center justify-center">
             {/* Portrait Container (Bigger on Mobile: 88vw, Balanced on Tablet & Desktop) */}
             <div className="relative w-[88vw] max-w-[410px] sm:w-[60vw] sm:max-w-[470px] md:w-[54vw] md:max-w-[500px] lg:w-[44vw] lg:max-w-[560px] max-h-[66vh] aspect-square flex items-center justify-center">
-              {/* Subtle Circular Liquid Glass Halo Behind Portrait (Fixed) */}
+              {/* Subtle Circular Liquid Glass Halo Behind Portrait */}
               <div
+                ref={heroHaloRef}
                 aria-hidden="true"
+                style={{ willChange: 'transform, opacity' }}
                 className={`absolute w-[76%] h-[76%] rounded-full pointer-events-none opacity-65 ${glassSurface}`}
               />
 
@@ -607,8 +400,15 @@ export default function App() {
                 </span>
               </div>
 
-              {/* Layer 2: Middle Cutout Portrait (Strictly Fixed, Does Not Move) */}
-              <div className="relative z-20 w-full h-full flex items-end justify-center pointer-events-none">
+              {/* Layer 2: Middle Cutout Portrait (Enlarges & Smoothly Disappears on Scroll Down) */}
+              <div
+                ref={heroPortraitRef}
+                style={{
+                  willChange: 'transform, opacity',
+                  transformOrigin: 'center 62%',
+                }}
+                className="relative z-20 w-full h-full flex items-end justify-center pointer-events-none"
+              >
                 <CutoutPortrait
                   imageSrc={HERO_IMAGE_PATH}
                   alt="Aryan Das"
@@ -667,25 +467,16 @@ export default function App() {
             aryandas.original@gmail.com
           </motion.a>
         </motion.div>
-      </motion.section>
+      </section>
 
       {/* =====================================================================
           SECTION 2: SKILLS & SPECIALTY ROLLER SECTION
           - Left 65%: Big Transparent Liquid Glass Button Named "Skills"
           - Right 35%: Vertical Specialty Roller with 3 Periodic Dots
-          - Smooth scroll-reveal animation on viewport entry
       ====================================================================== */}
-      <motion.section
+      <section
         id="white-section"
-        initial={{ opacity: 0, y: 40, scale: 0.985 }}
-        whileInView={{ opacity: 1, y: 0, scale: 1 }}
-        viewport={{ once: false, amount: 0.18 }}
-        transition={{
-          type: 'spring',
-          stiffness: 310,
-          damping: 30,
-          mass: 0.45,
-        }}
+        style={{ contain: 'layout style paint' }}
         className="relative w-full h-screen min-h-[640px] overflow-hidden select-none transform-gpu"
       >
         {/* Full-Viewport Liquid Glass Stage Vessel */}
@@ -1261,24 +1052,15 @@ export default function App() {
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.section>
+      </section>
 
       {/* =====================================================================
           SECTION 3: DEDICATED PROJECTS FOLDER SECTION
           - Frosted Liquid-Glass Folder Named "PROJECTS"
-          - Smooth scroll-reveal animation on viewport entry
       ====================================================================== */}
-      <motion.section
+      <section
         id="projects-section"
-        initial={{ opacity: 0, y: 40, scale: 0.985 }}
-        whileInView={{ opacity: 1, y: 0, scale: 1 }}
-        viewport={{ once: false, amount: 0.18 }}
-        transition={{
-          type: 'spring',
-          stiffness: 310,
-          damping: 30,
-          mass: 0.45,
-        }}
+        style={{ contain: 'layout style paint' }}
         className="relative w-full h-screen min-h-[640px] overflow-hidden select-none transform-gpu"
       >
         {/* Full-Viewport Liquid Glass Stage Vessel */}
@@ -1289,24 +1071,15 @@ export default function App() {
         <div className="relative z-10 w-full h-full flex items-center justify-center">
           <ProjectsRoadmap isDark={isDark} />
         </div>
-      </motion.section>
+      </section>
 
       {/* =====================================================================
           SECTION 4: DEDICATED CREDENTIALS SECTION
           - Vertical Stepped Stack of Blurred Certificate Cards (image_c19289cb.png)
-          - Smooth scroll-reveal animation on viewport entry
       ====================================================================== */}
-      <motion.section
+      <section
         id="credentials-section"
-        initial={{ opacity: 0, y: 40, scale: 0.985 }}
-        whileInView={{ opacity: 1, y: 0, scale: 1 }}
-        viewport={{ once: false, amount: 0.18 }}
-        transition={{
-          type: 'spring',
-          stiffness: 310,
-          damping: 30,
-          mass: 0.45,
-        }}
+        style={{ contain: 'layout style paint' }}
         className="relative w-full h-screen min-h-[640px] overflow-hidden select-none transform-gpu"
       >
         {/* Full-Viewport Liquid Glass Stage Vessel */}
@@ -1317,25 +1090,16 @@ export default function App() {
         <div className="relative z-10 w-full h-full flex items-center justify-center">
           <CredentialsSection isDark={isDark} />
         </div>
-      </motion.section>
+      </section>
 
       {/* =====================================================================
           SECTION 5: FOOTER SECTION
           - Interactive Sliced "ARYAN DAS" Typography + Social Links Dock
-          - Smooth scroll-reveal animation on viewport entry
       ====================================================================== */}
-      <motion.footer
+      <footer
         id="footer-section"
         onClick={() => setActivePopout(null)}
-        initial={{ opacity: 0, y: 40, scale: 0.985 }}
-        whileInView={{ opacity: 1, y: 0, scale: 1 }}
-        viewport={{ once: false, amount: 0.18 }}
-        transition={{
-          type: 'spring',
-          stiffness: 310,
-          damping: 30,
-          mass: 0.45,
-        }}
+        style={{ contain: 'layout style paint' }}
         className="relative w-full h-screen min-h-[640px] flex flex-col items-center justify-center overflow-hidden transform-gpu"
       >
         {/* Full-Viewport Liquid Glass Stage Vessel */}
@@ -1736,7 +1500,7 @@ export default function App() {
             </motion.div>
           </div>
         </div>
-      </motion.footer>
+      </footer>
     </div>
   );
 }

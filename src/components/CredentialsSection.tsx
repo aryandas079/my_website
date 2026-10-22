@@ -110,12 +110,35 @@ interface CredentialsSectionProps {
   isDark?: boolean;
 }
 
-// Preload all credential certificate photos into browser cache on module evaluation
+const blurredCertCache = new Map<string, string>();
+const blurredCertListeners = new Set<() => void>();
+
+// Preload all credential certificate photos & pre-render lightweight blurred bitmaps once on module load
+// so the 7 stacked cards render at 120fps with ZERO runtime CSS filter:blur() GPU cost
 if (typeof window !== 'undefined') {
   for (const item of CREDENTIAL_CARDS) {
     const img = new Image();
+    img.crossOrigin = 'anonymous';
     img.decoding = 'async';
     img.src = item.image;
+    img.onload = () => {
+      try {
+        const w = 280;
+        const h = 186;
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.filter = 'blur(6px)';
+          ctx.drawImage(img, -12, -12, w + 24, h + 24);
+          blurredCertCache.set(item.image, canvas.toDataURL('image/jpeg', 0.85));
+          blurredCertListeners.forEach((cb) => cb());
+        }
+      } catch {
+        // Fallback to original image if canvas taint occurs
+      }
+    };
   }
 }
 
@@ -216,6 +239,16 @@ export const CredentialsSection: React.FC<CredentialsSectionProps> = ({
 
   const lastWheelTimeRef = useRef<number>(0);
   const total = CREDENTIAL_CARDS.length;
+
+  const [, setCacheTick] = useState<number>(0);
+
+  useEffect(() => {
+    const onBlurReady = () => setCacheTick((n) => n + 1);
+    blurredCertListeners.add(onBlurReady);
+    return () => {
+      blurredCertListeners.delete(onBlurReady);
+    };
+  }, []);
 
   // Slow automatic card scrolling animation (smoothly cycles every 3.8s when idle)
   useEffect(() => {
@@ -340,6 +373,8 @@ export const CredentialsSection: React.FC<CredentialsSectionProps> = ({
 
           const isMain = relOffset === 0;
           const pose = getSteppedCardPose(relOffset);
+          const preBlurredUrl = blurredCertCache.get(card.image);
+          const showCrispPhoto = isMain && isPhotoRevealed;
 
           return (
             <motion.div
@@ -409,27 +444,27 @@ export const CredentialsSection: React.FC<CredentialsSectionProps> = ({
               role="button"
               tabIndex={isMain ? 0 : -1}
               aria-label={card.title}
-              className={`absolute w-full max-w-[430px] sm:max-w-[480px] h-[280px] sm:h-[316px] rounded-[22px] overflow-hidden border border-white/35 bg-white cursor-pointer transform-gpu transition-shadow duration-200 ${
+              className={`absolute w-full max-w-[430px] sm:max-w-[480px] h-[280px] sm:h-[316px] rounded-[22px] overflow-hidden border border-white/35 bg-white cursor-pointer transform-gpu ${
                 isMain
-                  ? 'shadow-[0_24px_60px_rgba(0,0,0,0.34)]'
-                  : 'shadow-[0_10px_28px_rgba(0,0,0,0.22)]'
+                  ? 'shadow-[0_20px_48px_rgba(0,0,0,0.3)]'
+                  : 'shadow-[0_8px_22px_rgba(0,0,0,0.18)]'
               } ${relOffset === -3 ? 'pointer-events-none' : 'pointer-events-auto'}`}
             >
               {/* Certificate Photo Inside the Card:
-                  - Blurred when in stepped stack or showing Name / Swiped Details
-                  - Crisp & Unblurred right inside the main card when clicked */}
+                  - Uses pre-rendered blurred bitmap (zero runtime CSS filter:blur() lag) when blurred
+                  - Swaps to crisp unblurred original photo right inside the card when clicked */}
               <img
-                src={card.image}
+                src={showCrispPhoto ? card.image : preBlurredUrl || card.image}
                 alt={card.title}
                 referrerPolicy="no-referrer"
                 decoding="async"
                 draggable={false}
-                className={`absolute inset-0 w-full h-full select-none transition-[filter,transform,padding] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                  isMain && isPhotoRevealed
-                    ? 'object-contain bg-white blur-0 scale-100 p-1.5'
-                    : isMain
-                    ? 'object-cover blur-[10px] scale-105'
-                    : 'object-cover blur-[5px] scale-110'
+                className={`absolute inset-0 w-full h-full select-none transition-transform duration-200 ease-out ${
+                  showCrispPhoto
+                    ? 'object-contain bg-white scale-100 p-1.5'
+                    : preBlurredUrl
+                    ? 'object-cover scale-105'
+                    : 'object-cover blur-[8px] scale-105'
                 }`}
               />
 

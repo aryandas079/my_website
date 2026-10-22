@@ -583,36 +583,37 @@ export const ProjectsRoadmap: React.FC<{ isDark?: boolean }> = ({
               className="w-full h-full overflow-visible"
             >
               <defs>
-                {/* Folder Silhouette Clip Path with Top-Left Tab and Smooth S-Curve */}
-                <clipPath id="projects-folder-clip">
-                  <path d="M 0 26 C 0 11.64 11.64 0 26 0 L 146 0 C 162 0 170 8 180 20 C 190 32 200 38 218 38 L 354 38 C 368.36 38 380 49.64 380 64 L 380 152 C 380 167.46 367.46 180 352 180 L 28 180 C 12.54 180 0 167.46 0 152 Z" />
-                </clipPath>
+                <linearGradient id="folder-glass-light" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="rgba(255, 255, 255, 0.86)" />
+                  <stop offset="48%" stopColor="rgba(244, 244, 250, 0.78)" />
+                  <stop offset="85%" stopColor="rgba(250, 250, 254, 0.9)" />
+                  <stop offset="100%" stopColor="rgba(255, 255, 255, 0.96)" />
+                </linearGradient>
+                <linearGradient id="folder-glass-dark" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="rgba(236, 236, 242, 0.76)" />
+                  <stop offset="48%" stopColor="rgba(222, 222, 230, 0.68)" />
+                  <stop offset="85%" stopColor="rgba(240, 240, 246, 0.82)" />
+                  <stop offset="100%" stopColor="rgba(252, 252, 255, 0.92)" />
+                </linearGradient>
+                <linearGradient id="folder-glass-tinted" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="rgba(46, 46, 52, 0.9)" />
+                  <stop offset="50%" stopColor="rgba(74, 74, 82, 0.86)" />
+                  <stop offset="86%" stopColor="rgba(168, 168, 176, 0.92)" />
+                  <stop offset="100%" stopColor="rgba(242, 242, 246, 0.98)" />
+                </linearGradient>
               </defs>
 
-              {/* ForeignObject for Translucent Backdrop Blur + Liquid Glass vs Tinted State */}
-              <foreignObject
-                x="0"
-                y="0"
-                width="380"
-                height="180"
-                clipPath="url(#projects-folder-clip)"
-              >
-                <div
-                  className={`w-full h-full transition-all duration-200 ${
-                    isFolderTinted ? 'backdrop-blur-xl' : 'backdrop-blur-[6px]'
-                  }`}
-                  style={{
-                    background: isFolderTinted
-                      ? 'linear-gradient(180deg, rgba(46, 46, 52, 0.78) 0%, rgba(74, 74, 82, 0.70) 50%, rgba(168, 168, 176, 0.85) 86%, rgba(242, 242, 246, 0.96) 100%)'
-                      : isDark
-                      ? 'linear-gradient(180deg, rgba(236, 236, 242, 0.48) 0%, rgba(222, 222, 230, 0.36) 48%, rgba(240, 240, 246, 0.64) 85%, rgba(252, 252, 255, 0.86) 100%)'
-                      : 'linear-gradient(180deg, rgba(255, 255, 255, 0.52) 0%, rgba(242, 242, 248, 0.38) 48%, rgba(250, 250, 254, 0.72) 85%, rgba(255, 255, 255, 0.92) 100%)',
-                    boxShadow: isFolderTinted
-                      ? 'inset 0 1.5px 2px rgba(255,255,255,0.55)'
-                      : 'inset 0 2px 3px rgba(255,255,255,0.92), inset 0 -10px 24px rgba(255,255,255,0.45)',
-                  }}
-                />
-              </foreignObject>
+              {/* Pure GPU-Composited SVG Folder Silhouette Fill (Zero foreignObject / backdrop-filter lag) */}
+              <path
+                d="M 0 26 C 0 11.64 11.64 0 26 0 L 146 0 C 162 0 170 8 180 20 C 190 32 200 38 218 38 L 354 38 C 368.36 38 380 49.64 380 64 L 380 152 C 380 167.46 367.46 180 352 180 L 28 180 C 12.54 180 0 167.46 0 152 Z"
+                fill={
+                  isFolderTinted
+                    ? 'url(#folder-glass-tinted)'
+                    : isDark
+                    ? 'url(#folder-glass-dark)'
+                    : 'url(#folder-glass-light)'
+                }
+              />
 
               {/* Specular Rim Border Around Folder Silhouette */}
               <path
