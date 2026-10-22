@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export interface CredentialCardItem {
@@ -219,27 +219,23 @@ export const CredentialsSection: React.FC<CredentialsSectionProps> = ({
   isDark = false,
 }) => {
   const [activeIndex, setActiveIndex] = useState<number>(0);
-  // Default: false (only the name is shown over the blurred certificate)
-  // Swiped: true (shows the clean LinkedIn details in white shadowed text over the blurred card)
-  const [showDetails, setShowDetails] = useState<boolean>(false);
-  // Clicked: true (reveals the unblurred original certificate photo directly inside the card itself)
+  // isPhotoRevealed: true when unblurred right in place, false when blurred
   const [isPhotoRevealed, setIsPhotoRevealed] = useState<boolean>(false);
-  // Pause automatic slow scrolling while hovering or inspecting photo/details
   const [isHovered, setIsHovered] = useState<boolean>(false);
 
   const pointerStartRef = useRef<{
     x: number;
     y: number;
     active: boolean;
+    moved: boolean;
   }>({
     x: 0,
     y: 0,
     active: false,
+    moved: false,
   });
 
-  const lastWheelTimeRef = useRef<number>(0);
   const total = CREDENTIAL_CARDS.length;
-
   const [, setCacheTick] = useState<number>(0);
 
   useEffect(() => {
@@ -250,37 +246,57 @@ export const CredentialsSection: React.FC<CredentialsSectionProps> = ({
     };
   }, []);
 
-  // Automatic card scrolling animation (smoothly cycles every 1.5s per card when idle)
+  // Automatic card scrolling animation (1.5s per card)
+  // STOPS SCROLLING COMPLETELY when unblurred (isPhotoRevealed) or hovered
+  // Resumes scrolling only when clicked and blurred again
   useEffect(() => {
-    if (isHovered || isPhotoRevealed || showDetails) return;
+    if (isPhotoRevealed || isHovered) return;
 
     const interval = window.setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % total);
-      setShowDetails(false);
-      setIsPhotoRevealed(false);
     }, 1500);
 
     return () => window.clearInterval(interval);
-  }, [isHovered, isPhotoRevealed, showDetails, total]);
+  }, [isHovered, isPhotoRevealed, total]);
 
-  const handleSelectOffset = (offset: number) => {
-    if (offset === 0) return;
-    const nextIdx = (((activeIndex + offset) % total) + total) % total;
-    setActiveIndex(nextIdx);
-    setShowDetails(false);
-    setIsPhotoRevealed(false);
+  const handleSelectOffset = useCallback(
+    (offset: number) => {
+      if (offset === 0) return;
+      setActiveIndex((prev) => (((prev + offset) % total) + total) % total);
+    },
+    [total]
+  );
+
+  // Single click handler:
+  // - Clicking any card unblurs the image right where it is (and shifts it to center if needed)
+  // - Clicking the active unblurred card blurs it again, which resumes scrolling!
+  const handleCardClick = (idx: number) => {
+    if (pointerStartRef.current.moved) return;
+
+    if (idx !== activeIndex) {
+      setActiveIndex(idx);
+      setIsPhotoRevealed(true);
+    } else {
+      setIsPhotoRevealed((prev) => !prev);
+    }
   };
 
-  // Pointer / Touch handlers on the main card:
-  // - Horizontal Swipe -> reveals/toggles the LinkedIn details over the blurred card
-  // - Vertical Swipe -> smoothly advances/reverses the stepped card stack
-  // - Click / Tap -> reveals the original certificate photo directly inside the card itself
   const handlePointerDown = (clientX: number, clientY: number) => {
     pointerStartRef.current = {
       x: clientX,
       y: clientY,
       active: true,
+      moved: false,
     };
+  };
+
+  const handlePointerMove = (clientX: number, clientY: number) => {
+    if (!pointerStartRef.current.active) return;
+    const dx = clientX - pointerStartRef.current.x;
+    const dy = clientY - pointerStartRef.current.y;
+    if (Math.hypot(dx, dy) > 12) {
+      pointerStartRef.current.moved = true;
+    }
   };
 
   const handlePointerUp = (clientX: number, clientY: number) => {
@@ -292,39 +308,13 @@ export const CredentialsSection: React.FC<CredentialsSectionProps> = ({
     const dy = clientY - start.y;
     const dist = Math.hypot(dx, dy);
 
-    // Swipe gesture (> 14px)
-    if (dist > 14) {
-      if (Math.abs(dy) > Math.abs(dx) * 1.25 && Math.abs(dy) > 24) {
-        // Vertical swipe cycles the stack smoothly
-        if (dy < 0) {
-          handleSelectOffset(1);
-        } else {
-          handleSelectOffset(-1);
-        }
+    // Intentional swipe gesture (> 24px) to glide through cards
+    if (dist > 24 && Math.abs(dy) > Math.abs(dx) * 1.25) {
+      if (dy < 0) {
+        handleSelectOffset(1);
       } else {
-        // Horizontal swipe toggles clean LinkedIn details on the blurred card
-        if (isPhotoRevealed) {
-          setIsPhotoRevealed(false);
-          setShowDetails(true);
-        } else {
-          setShowDetails((prev) => !prev);
-        }
+        handleSelectOffset(-1);
       }
-      return;
-    }
-
-    // Clean click -> toggle unblurred photo directly inside the card itself
-    setIsPhotoRevealed((prev) => !prev);
-  };
-
-  const handleCardWheel = (e: React.WheelEvent) => {
-    const now = performance.now();
-    if (Math.abs(e.deltaX) > 10 && Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-      e.stopPropagation();
-      if (now - lastWheelTimeRef.current < 320) return;
-      lastWheelTimeRef.current = now;
-      setIsPhotoRevealed(false);
-      setShowDetails((prev) => !prev);
     }
   };
 
@@ -332,9 +322,9 @@ export const CredentialsSection: React.FC<CredentialsSectionProps> = ({
     <div
       className="relative w-full h-full flex flex-col items-center justify-center px-4 sm:px-8 py-6 overflow-hidden select-none"
       onClick={() => {
-        if (isPhotoRevealed || showDetails) {
+        // Clicking outside the cards blurs it back and resumes scrolling
+        if (isPhotoRevealed) {
           setIsPhotoRevealed(false);
-          setShowDetails(false);
         }
       }}
     >
@@ -353,11 +343,11 @@ export const CredentialsSection: React.FC<CredentialsSectionProps> = ({
       />
 
       {/* =====================================================================
-          CENTER CONTINUOUS STEPPED STACK OF BLURRED CERTIFICATE CARDS
-          - All 7 cards stay mounted and smoothly glide through stepped slots
-          - Default: Only the Credential Name in clean white shadowed text
-          - Swiped: Clean LinkedIn certification details in white shadowed text
-          - Clicked: Unblurs and shows the original certificate photo inside the card itself
+          CENTER CONTINUOUS STEPPED STACK OF CERTIFICATE CARDS
+          - All cards stay mounted and glide through stepped slots
+          - Default: Blurred image in place with the Credential Title text
+          - Single Click: Unblurs the image right where it is (no popups, nothing else!)
+          - Auto-scrolling stops completely until clicked and blurred again
       ====================================================================== */}
       <div
         className="relative z-10 w-full max-w-[540px] h-[420px] sm:h-[480px] flex items-center justify-center"
@@ -403,10 +393,14 @@ export const CredentialsSection: React.FC<CredentialsSectionProps> = ({
                 zIndex: pose.zIndex,
                 willChange: 'transform, opacity',
               }}
-              onWheel={isMain ? handleCardWheel : undefined}
               onMouseDown={
                 isMain
                   ? (e) => handlePointerDown(e.clientX, e.clientY)
+                  : undefined
+              }
+              onMouseMove={
+                isMain
+                  ? (e) => handlePointerMove(e.clientX, e.clientY)
                   : undefined
               }
               onMouseUp={
@@ -426,6 +420,18 @@ export const CredentialsSection: React.FC<CredentialsSectionProps> = ({
                     }
                   : undefined
               }
+              onTouchMove={
+                isMain
+                  ? (e) => {
+                      if (e.touches.length > 0) {
+                        handlePointerMove(
+                          e.touches[0].clientX,
+                          e.touches[0].clientY
+                        );
+                      }
+                    }
+                  : undefined
+              }
               onTouchEnd={
                 isMain
                   ? (e) => {
@@ -438,11 +444,12 @@ export const CredentialsSection: React.FC<CredentialsSectionProps> = ({
                     }
                   : undefined
               }
-              onClick={
-                !isMain ? () => handleSelectOffset(relOffset) : undefined
-              }
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCardClick(idx);
+              }}
               role="button"
-              tabIndex={isMain ? 0 : -1}
+              tabIndex={0}
               aria-label={card.title}
               className={`absolute w-full max-w-[430px] sm:max-w-[480px] h-[280px] sm:h-[316px] rounded-[22px] overflow-hidden border border-white/35 bg-white cursor-pointer transform-gpu ${
                 isMain
@@ -450,107 +457,55 @@ export const CredentialsSection: React.FC<CredentialsSectionProps> = ({
                   : 'shadow-[0_8px_22px_rgba(0,0,0,0.18)]'
               } ${relOffset === -3 ? 'pointer-events-none' : 'pointer-events-auto'}`}
             >
-              {/* Certificate Photo Inside the Card:
-                  - Uses pre-rendered blurred bitmap (zero runtime CSS filter:blur() lag) when blurred
-                  - Swaps to crisp unblurred original photo right inside the card when clicked */}
+              {/* Certificate Image:
+                  - Blurred in place when in stack
+                  - Unblurs right in place on single click */}
               <img
                 src={showCrispPhoto ? card.image : preBlurredUrl || card.image}
                 alt={card.title}
                 referrerPolicy="no-referrer"
                 decoding="async"
                 draggable={false}
-                className={`absolute inset-0 w-full h-full select-none transition-transform duration-200 ease-out ${
+                className={`absolute inset-0 w-full h-full select-none transition-all duration-300 ease-out ${
                   showCrispPhoto
-                    ? 'object-contain bg-white scale-100 p-1.5'
+                    ? 'object-contain bg-white scale-100 p-2 sm:p-2.5'
                     : preBlurredUrl
                     ? 'object-cover scale-105'
                     : 'object-cover blur-[8px] scale-105'
                 }`}
               />
 
-              {/* Soft Dark Scrim (Fades out completely when photo is revealed inside the card) */}
+              {/* Soft Dark Scrim (Fades out completely when unblurred) */}
               <div
                 aria-hidden="true"
-                className={`absolute inset-0 pointer-events-none transition-all duration-200 ease-out ${
-                  isMain && isPhotoRevealed
-                    ? 'opacity-0'
-                    : isMain && showDetails
-                    ? 'opacity-100 bg-black/52'
-                    : isMain
-                    ? 'opacity-100 bg-black/32'
-                    : 'opacity-100 bg-black/22'
+                className={`absolute inset-0 pointer-events-none transition-opacity duration-300 ease-out ${
+                  showCrispPhoto ? 'opacity-0' : 'opacity-100 bg-black/32'
                 }`}
               />
 
-              {/* Clean White Shadowed Text Overlay on the Main Active Card */}
-              {isMain && (
-                <AnimatePresence mode="wait" initial={false}>
-                  {!isPhotoRevealed && !showDetails && (
-                    <motion.div
-                      key="name-only"
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -6 }}
-                      transition={{
-                        duration: 0.16,
-                        ease: [0.22, 1, 0.36, 1],
-                      }}
-                      className="relative z-10 w-full h-full px-7 sm:px-10 flex items-center justify-center text-center"
-                    >
-                      <h3
-                        className="font-sans font-bold text-xl sm:text-2xl md:text-[26px] tracking-[-0.02em] leading-[1.2] text-white"
-                        style={{
-                          textShadow:
-                            '0 2px 14px rgba(0, 0, 0, 0.78), 0 4px 28px rgba(0, 0, 0, 0.55)',
-                        }}
-                      >
-                        {card.title}
-                      </h3>
-                    </motion.div>
-                  )}
-
-                  {!isPhotoRevealed && showDetails && (
-                    <motion.div
-                      key="swiped-details"
-                      initial={{ opacity: 0, x: 14 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -14 }}
-                      transition={{
-                        duration: 0.16,
-                        ease: [0.22, 1, 0.36, 1],
-                      }}
-                      className="relative z-10 w-full h-full p-6 sm:p-8 flex flex-col justify-center text-left gap-2.5"
+              {/* Credential Name Text (Visible only when blurred; disappears when unblurred) */}
+              <AnimatePresence>
+                {!showCrispPhoto && isMain && (
+                  <motion.div
+                    key="name-only"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.18 }}
+                    className="relative z-10 w-full h-full px-7 sm:px-10 flex items-center justify-center text-center pointer-events-none"
+                  >
+                    <h3
+                      className="font-sans font-bold text-xl sm:text-2xl md:text-[26px] tracking-[-0.02em] leading-[1.2] text-white"
                       style={{
                         textShadow:
-                          '0 2px 10px rgba(0, 0, 0, 0.85), 0 4px 22px rgba(0, 0, 0, 0.65)',
+                          '0 2px 14px rgba(0, 0, 0, 0.78), 0 4px 28px rgba(0, 0, 0, 0.55)',
                       }}
                     >
-                      <div className="space-y-0.5">
-                        <h3 className="font-sans font-bold text-base sm:text-lg text-white leading-snug">
-                          {card.title}
-                        </h3>
-                        <p className="font-sans font-medium text-xs sm:text-sm text-white/95">
-                          {card.issuer}
-                        </p>
-                      </div>
-
-                      <div className="space-y-0.5 text-xs text-white/90 font-sans">
-                        <p>{card.issuedDate}</p>
-                        <p className="font-mono text-[11px] text-white/85 truncate">
-                          {card.credentialId}
-                        </p>
-                      </div>
-
-                      <p className="font-sans text-xs text-white/95 leading-relaxed pt-1">
-                        <span className="font-semibold text-white">
-                          Skills:{' '}
-                        </span>
-                        {card.skills.join(', ')}
-                      </p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              )}
+                      {card.title}
+                    </h3>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           );
         })}
@@ -567,3 +522,4 @@ export const CredentialsSection: React.FC<CredentialsSectionProps> = ({
     </div>
   );
 };
+

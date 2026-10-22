@@ -340,27 +340,14 @@ export default function App() {
           }}
           className="absolute top-6 sm:top-8 lg:top-10 left-6 right-6 sm:left-10 sm:right-10 lg:left-14 lg:right-14 z-40 flex flex-row items-center justify-between gap-3"
         >
-          {/* Top-Left: Profile Title Bar with ARD Logo (black over white) and Aryan Das */}
+          {/* Top-Left: "Aspiring Data Scientist & ML Engineer" inside Liquid Glass Button */}
           <motion.div
             whileHover={{ scale: 1.02, y: -1 }}
             transition={{ type: 'spring', stiffness: 550, damping: 28, mass: 0.35 }}
-            className={`${glassBtn} px-3 sm:px-4 py-1.5 sm:py-2 rounded-2xl flex items-center gap-2.5 sm:gap-3 select-none`}
-            title="Aryan Das"
+            className={`${glassBtn} px-3.5 sm:px-5 py-2 rounded-2xl font-sans font-normal tracking-tight whitespace-nowrap`}
+            style={{ fontSize: 'clamp(0.72rem, 1.3vw, 1.15rem)' }}
           >
-            {/* Logo: ARD written in black over white */}
-            <span
-              className="inline-flex items-center justify-center bg-white text-black font-sans font-black tracking-wider text-[11px] sm:text-xs px-2 py-0.5 rounded-lg shadow-sm border border-black/10 shrink-0 select-none"
-              style={{ letterSpacing: '0.06em' }}
-              aria-label="ARD Logo"
-            >
-              ARD
-            </span>
-            <span
-              className="font-sans font-medium tracking-tight whitespace-nowrap"
-              style={{ fontSize: 'clamp(0.78rem, 1.3vw, 1.05rem)' }}
-            >
-              Aryan Das
-            </span>
+            Aspiring Data Scientist &amp; ML Engineer
           </motion.div>
 
           {/* Top-Right Controls: Theme Toggle (Sun/Moon) + Long Horizontal Arrow inside Liquid Glass Buttons */}
