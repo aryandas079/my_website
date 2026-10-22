@@ -114,7 +114,7 @@ interface CredentialsSectionProps {
 const blurredCertCache = new Map<string, string>();
 const blurredCertListeners = new Set<() => void>();
 
-// Preload all credential certificate photos & pre-render lightweight blurred bitmaps once on module load
+// Preload all credential certificate photos & pre-render blurred bitmaps once on module load
 // so the 7 stacked cards render at 120fps with ZERO runtime CSS filter:blur() GPU cost
 if (typeof window !== 'undefined') {
   for (const item of CREDENTIAL_CARDS) {
@@ -131,8 +131,8 @@ if (typeof window !== 'undefined') {
         canvas.height = h;
         const ctx = canvas.getContext('2d');
         if (ctx) {
-          ctx.filter = 'blur(6px)';
-          ctx.drawImage(img, -12, -12, w + 24, h + 24);
+          ctx.filter = 'blur(18px)';
+          ctx.drawImage(img, -36, -36, w + 72, h + 72);
           blurredCertCache.set(item.image, canvas.toDataURL('image/jpeg', 0.85));
           blurredCertListeners.forEach((cb) => cb());
         }
@@ -458,7 +458,7 @@ export const CredentialsSection: React.FC<CredentialsSectionProps> = ({
                     ? 'object-contain bg-white scale-100 p-2 sm:p-2.5'
                     : preBlurredUrl
                     ? 'object-cover scale-105'
-                    : 'object-cover blur-[8px] scale-105'
+                    : 'object-cover blur-[18px] scale-[1.12]'
                 }`}
               />
 
