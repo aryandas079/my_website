@@ -98,6 +98,75 @@ const SKILLS_PYTHON_LIBRARIES: SkillItem[] = ALL_SKILLS.slice(14, 21); // PyTorc
 const SKILLS_TOOLS: SkillItem[] = ALL_SKILLS.slice(22, 25); // Git, GitHub, VS Code
 const SKILLS_DESIGN_TOOLS: SkillItem[] = ALL_SKILLS.slice(25, 29); // Photoshop, Lightroom, Premiere Pro, Figma
 
+interface SkillCapsuleButtonProps {
+  skill: SkillItem;
+  isSelected: boolean;
+  isDark: boolean;
+  glassBtn: string;
+  mobileSpan?: string;
+  onHover: () => void;
+  onSelect: () => void;
+}
+
+const SkillCapsuleButton: React.FC<SkillCapsuleButtonProps> = React.memo(
+  ({
+    skill,
+    isSelected,
+    isDark,
+    glassBtn,
+    mobileSpan = '',
+    onHover,
+    onSelect,
+  }) => {
+    const IconComponent = skill.Icon;
+
+    return (
+      <motion.button
+        variants={SKILL_CAPSULE_VARIANTS}
+        whileHover={{
+          y: -4,
+          scale: 1.07,
+        }}
+        whileTap={{ scale: 0.94 }}
+        transition={{
+          type: 'spring',
+          stiffness: 560,
+          damping: 24,
+          mass: 0.22,
+        }}
+        type="button"
+        onMouseEnter={onHover}
+        onFocus={onHover}
+        onClick={onSelect}
+        aria-label={`${skill.name} (${skill.category})`}
+        style={{ willChange: 'transform' }}
+        className={`${mobileSpan} group relative w-full py-2.5 sm:py-3 lg:py-3.5 rounded-xl sm:rounded-2xl flex items-center justify-center cursor-pointer select-none transform-gpu transition-colors duration-150 ${
+          isSelected
+            ? isDark
+              ? 'bg-[#EAE0C8] text-[#191919] shadow-[0_8px_22px_rgba(234,224,200,0.24)]'
+              : 'bg-[#191919] text-white shadow-[0_8px_22px_rgba(0,0,0,0.28)]'
+            : `${glassBtn} ${
+                isDark ? 'text-white' : 'text-black'
+              } opacity-90 hover:opacity-100 hover:shadow-md`
+        }`}
+      >
+        <IconComponent
+          className={`w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 bg-transparent pointer-events-none transform-gpu transition-transform duration-200 ease-out group-hover:scale-110 ${
+            isSelected
+              ? isDark
+                ? 'text-[#191919]'
+                : 'text-white'
+              : isDark
+              ? 'text-white'
+              : 'text-black'
+          }`}
+        />
+      </motion.button>
+    );
+  }
+);
+SkillCapsuleButton.displayName = 'SkillCapsuleButton';
+
 export default function App() {
   // Light theme is the default; only switches when the theme toggle button is clicked
   const [isDark, setIsDark] = useState<boolean>(false);
@@ -271,14 +340,27 @@ export default function App() {
           }}
           className="absolute top-6 sm:top-8 lg:top-10 left-6 right-6 sm:left-10 sm:right-10 lg:left-14 lg:right-14 z-40 flex flex-row items-center justify-between gap-3"
         >
-          {/* Top-Left Role Title inside Liquid Glass Pill */}
+          {/* Top-Left: Profile Title Bar with ARD Logo (black over white) and Aryan Das */}
           <motion.div
             whileHover={{ scale: 1.02, y: -1 }}
             transition={{ type: 'spring', stiffness: 550, damping: 28, mass: 0.35 }}
-            className={`${glassBtn} px-3.5 sm:px-5 py-2 rounded-2xl font-sans font-normal tracking-tight whitespace-nowrap`}
-            style={{ fontSize: 'clamp(0.72rem, 1.3vw, 1.15rem)' }}
+            className={`${glassBtn} px-3 sm:px-4 py-1.5 sm:py-2 rounded-2xl flex items-center gap-2.5 sm:gap-3 select-none`}
+            title="Aryan Das"
           >
-            Aspiring Data Scientist &amp; ML Engineer
+            {/* Logo: ARD written in black over white */}
+            <span
+              className="inline-flex items-center justify-center bg-white text-black font-sans font-black tracking-wider text-[11px] sm:text-xs px-2 py-0.5 rounded-lg shadow-sm border border-black/10 shrink-0 select-none"
+              style={{ letterSpacing: '0.06em' }}
+              aria-label="ARD Logo"
+            >
+              ARD
+            </span>
+            <span
+              className="font-sans font-medium tracking-tight whitespace-nowrap"
+              style={{ fontSize: 'clamp(0.78rem, 1.3vw, 1.05rem)' }}
+            >
+              Aryan Das
+            </span>
           </motion.div>
 
           {/* Top-Right Controls: Theme Toggle (Sun/Moon) + Long Horizontal Arrow inside Liquid Glass Buttons */}
@@ -594,8 +676,8 @@ export default function App() {
                         key={activeSkill.id}
                         initial={{
                           opacity: 0,
-                          y: 4,
-                          scale: 0.95,
+                          y: 3,
+                          scale: 0.96,
                         }}
                         animate={{
                           opacity: 1,
@@ -604,16 +686,16 @@ export default function App() {
                         }}
                         exit={{
                           opacity: 0,
-                          y: 2,
+                          y: -2,
                           scale: 0.96,
                         }}
                         transition={{
                           type: 'spring',
-                          stiffness: 620,
-                          damping: 34,
-                          mass: 0.32,
+                          stiffness: 650,
+                          damping: 30,
+                          mass: 0.22,
                         }}
-                        className={`border shadow-lg px-4 sm:px-5 py-1.5 rounded-full flex items-center gap-2.5 ${
+                        className={`border shadow-lg px-4 sm:px-5 py-1.5 rounded-full flex items-center gap-2.5 transform-gpu ${
                           isDark
                             ? 'bg-[#EAE0C8] text-[#191919] border-white/20'
                             : 'bg-[#191919] text-white border-black'
@@ -669,51 +751,26 @@ export default function App() {
                       </span>
                     </div>
                     <div className="w-full grid grid-cols-12 sm:grid-cols-7 gap-1.5 sm:gap-2.5 lg:gap-3">
-                      {SKILLS_PROGRAMMING_LANGUAGES.map((skill, idx) => {
-                        const isSelected = activeSkill?.id === skill.id;
-                        const IconComponent = skill.Icon;
-                        const mobileSpan =
-                          idx < 4
-                            ? 'col-span-3 sm:col-span-1'
-                            : 'col-span-4 sm:col-span-1';
-                        return (
-                          <motion.button
-                            key={skill.id}
-                            variants={SKILL_CAPSULE_VARIANTS}
-                            whileHover={{ y: -3, scale: 1.03 }}
-                            whileTap={{ scale: 0.96 }}
-                            type="button"
-                            onMouseEnter={() => setActiveSkill(skill)}
-                            onClick={() =>
-                              setActiveSkill((prev) =>
-                                prev?.id === skill.id ? null : skill
-                              )
-                            }
-                            aria-label={`${skill.name} (${skill.category})`}
-                            className={`${mobileSpan} w-full py-2.5 sm:py-3 lg:py-3.5 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
-                              isSelected
-                                ? isDark
-                                  ? 'bg-[#EAE0C8] text-[#191919] shadow-md scale-[1.02]'
-                                  : 'bg-[#191919] text-white shadow-md scale-[1.02]'
-                                : `${glassBtn} ${
-                                    isDark ? 'text-white' : 'text-black'
-                                  } opacity-90 hover:opacity-100`
-                            }`}
-                          >
-                            <IconComponent
-                              className={`w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 bg-transparent ${
-                                isSelected
-                                  ? isDark
-                                    ? 'text-[#191919]'
-                                    : 'text-white'
-                                  : isDark
-                                  ? 'text-white'
-                                  : 'text-black'
-                              }`}
-                            />
-                          </motion.button>
-                        );
-                      })}
+                      {SKILLS_PROGRAMMING_LANGUAGES.map((skill, idx) => (
+                        <SkillCapsuleButton
+                          key={skill.id}
+                          skill={skill}
+                          isSelected={activeSkill?.id === skill.id}
+                          isDark={isDark}
+                          glassBtn={glassBtn}
+                          mobileSpan={
+                            idx < 4
+                              ? 'col-span-3 sm:col-span-1'
+                              : 'col-span-4 sm:col-span-1'
+                          }
+                          onHover={() => setActiveSkill(skill)}
+                          onSelect={() =>
+                            setActiveSkill((prev) =>
+                              prev?.id === skill.id ? null : skill
+                            )
+                          }
+                        />
+                      ))}
                     </div>
                   </div>
 
@@ -747,47 +804,21 @@ export default function App() {
                         </span>
                       </div>
                       <div className="w-full grid grid-cols-4 gap-1.5 sm:gap-2.5 lg:gap-3">
-                        {SKILLS_WEB_AND_DB.map((skill) => {
-                          const isSelected = activeSkill?.id === skill.id;
-                          const IconComponent = skill.Icon;
-                          return (
-                            <motion.button
-                              key={skill.id}
-                              variants={SKILL_CAPSULE_VARIANTS}
-                              whileHover={{ y: -3, scale: 1.03 }}
-                              whileTap={{ scale: 0.96 }}
-                              type="button"
-                              onMouseEnter={() => setActiveSkill(skill)}
-                              onClick={() =>
-                                setActiveSkill((prev) =>
-                                  prev?.id === skill.id ? null : skill
-                                )
-                              }
-                              aria-label={`${skill.name} (${skill.category})`}
-                              className={`w-full py-2.5 sm:py-3 lg:py-3.5 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
-                                isSelected
-                                  ? isDark
-                                    ? 'bg-[#EAE0C8] text-[#191919] shadow-md scale-[1.02]'
-                                    : 'bg-[#191919] text-white shadow-md scale-[1.02]'
-                                  : `${glassBtn} ${
-                                      isDark ? 'text-white' : 'text-black'
-                                    } opacity-90 hover:opacity-100`
-                              }`}
-                            >
-                              <IconComponent
-                                className={`w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 bg-transparent ${
-                                  isSelected
-                                    ? isDark
-                                      ? 'text-[#191919]'
-                                      : 'text-white'
-                                    : isDark
-                                    ? 'text-white'
-                                    : 'text-black'
-                                }`}
-                              />
-                            </motion.button>
-                          );
-                        })}
+                        {SKILLS_WEB_AND_DB.map((skill) => (
+                          <SkillCapsuleButton
+                            key={skill.id}
+                            skill={skill}
+                            isSelected={activeSkill?.id === skill.id}
+                            isDark={isDark}
+                            glassBtn={glassBtn}
+                            onHover={() => setActiveSkill(skill)}
+                            onSelect={() =>
+                              setActiveSkill((prev) =>
+                                prev?.id === skill.id ? null : skill
+                              )
+                            }
+                          />
+                        ))}
                       </div>
                     </div>
 
@@ -809,47 +840,21 @@ export default function App() {
                         </span>
                       </div>
                       <div className="w-full grid grid-cols-4 gap-1.5 sm:gap-2.5 lg:gap-3">
-                        {SKILLS_FRAMEWORKS.map((skill) => {
-                          const isSelected = activeSkill?.id === skill.id;
-                          const IconComponent = skill.Icon;
-                          return (
-                            <motion.button
-                              key={skill.id}
-                              variants={SKILL_CAPSULE_VARIANTS}
-                              whileHover={{ y: -3, scale: 1.03 }}
-                              whileTap={{ scale: 0.96 }}
-                              type="button"
-                              onMouseEnter={() => setActiveSkill(skill)}
-                              onClick={() =>
-                                setActiveSkill((prev) =>
-                                  prev?.id === skill.id ? null : skill
-                                )
-                              }
-                              aria-label={`${skill.name} (${skill.category})`}
-                              className={`w-full py-2.5 sm:py-3 lg:py-3.5 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
-                                isSelected
-                                  ? isDark
-                                    ? 'bg-[#EAE0C8] text-[#191919] shadow-md scale-[1.02]'
-                                    : 'bg-[#191919] text-white shadow-md scale-[1.02]'
-                                  : `${glassBtn} ${
-                                      isDark ? 'text-white' : 'text-black'
-                                    } opacity-90 hover:opacity-100`
-                              }`}
-                            >
-                              <IconComponent
-                                className={`w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 bg-transparent ${
-                                  isSelected
-                                    ? isDark
-                                      ? 'text-[#191919]'
-                                      : 'text-white'
-                                    : isDark
-                                    ? 'text-white'
-                                    : 'text-black'
-                                }`}
-                              />
-                            </motion.button>
-                          );
-                        })}
+                        {SKILLS_FRAMEWORKS.map((skill) => (
+                          <SkillCapsuleButton
+                            key={skill.id}
+                            skill={skill}
+                            isSelected={activeSkill?.id === skill.id}
+                            isDark={isDark}
+                            glassBtn={glassBtn}
+                            onHover={() => setActiveSkill(skill)}
+                            onSelect={() =>
+                              setActiveSkill((prev) =>
+                                prev?.id === skill.id ? null : skill
+                              )
+                            }
+                          />
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -872,51 +877,26 @@ export default function App() {
                       </span>
                     </div>
                     <div className="w-full grid grid-cols-12 sm:grid-cols-7 gap-1.5 sm:gap-2.5 lg:gap-3">
-                      {SKILLS_PYTHON_LIBRARIES.map((skill, idx) => {
-                        const isSelected = activeSkill?.id === skill.id;
-                        const IconComponent = skill.Icon;
-                        const mobileSpan =
-                          idx < 4
-                            ? 'col-span-3 sm:col-span-1'
-                            : 'col-span-4 sm:col-span-1';
-                        return (
-                          <motion.button
-                            key={skill.id}
-                            variants={SKILL_CAPSULE_VARIANTS}
-                            whileHover={{ y: -3, scale: 1.03 }}
-                            whileTap={{ scale: 0.96 }}
-                            type="button"
-                            onMouseEnter={() => setActiveSkill(skill)}
-                            onClick={() =>
-                              setActiveSkill((prev) =>
-                                prev?.id === skill.id ? null : skill
-                              )
-                            }
-                            aria-label={`${skill.name} (${skill.category})`}
-                            className={`${mobileSpan} w-full py-2.5 sm:py-3 lg:py-3.5 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
-                              isSelected
-                                ? isDark
-                                  ? 'bg-[#EAE0C8] text-[#191919] shadow-md scale-[1.02]'
-                                  : 'bg-[#191919] text-white shadow-md scale-[1.02]'
-                                : `${glassBtn} ${
-                                    isDark ? 'text-white' : 'text-black'
-                                  } opacity-90 hover:opacity-100`
-                            }`}
-                          >
-                            <IconComponent
-                              className={`w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 bg-transparent ${
-                                isSelected
-                                  ? isDark
-                                    ? 'text-[#191919]'
-                                    : 'text-white'
-                                  : isDark
-                                  ? 'text-white'
-                                  : 'text-black'
-                              }`}
-                            />
-                          </motion.button>
-                        );
-                      })}
+                      {SKILLS_PYTHON_LIBRARIES.map((skill, idx) => (
+                        <SkillCapsuleButton
+                          key={skill.id}
+                          skill={skill}
+                          isSelected={activeSkill?.id === skill.id}
+                          isDark={isDark}
+                          glassBtn={glassBtn}
+                          mobileSpan={
+                            idx < 4
+                              ? 'col-span-3 sm:col-span-1'
+                              : 'col-span-4 sm:col-span-1'
+                          }
+                          onHover={() => setActiveSkill(skill)}
+                          onSelect={() =>
+                            setActiveSkill((prev) =>
+                              prev?.id === skill.id ? null : skill
+                            )
+                          }
+                        />
+                      ))}
                     </div>
                   </div>
 
@@ -941,47 +921,21 @@ export default function App() {
                         </span>
                       </div>
                       <div className="w-full grid grid-cols-3 gap-1.5 sm:gap-2.5 lg:gap-3">
-                        {SKILLS_TOOLS.map((skill) => {
-                          const isSelected = activeSkill?.id === skill.id;
-                          const IconComponent = skill.Icon;
-                          return (
-                            <motion.button
-                              key={skill.id}
-                              variants={SKILL_CAPSULE_VARIANTS}
-                              whileHover={{ y: -3, scale: 1.03 }}
-                              whileTap={{ scale: 0.96 }}
-                              type="button"
-                              onMouseEnter={() => setActiveSkill(skill)}
-                              onClick={() =>
-                                setActiveSkill((prev) =>
-                                  prev?.id === skill.id ? null : skill
-                                )
-                              }
-                              aria-label={`${skill.name} (${skill.category})`}
-                              className={`w-full py-2.5 sm:py-3 lg:py-3.5 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
-                                isSelected
-                                  ? isDark
-                                    ? 'bg-[#EAE0C8] text-[#191919] shadow-md scale-[1.02]'
-                                    : 'bg-[#191919] text-white shadow-md scale-[1.02]'
-                                  : `${glassBtn} ${
-                                      isDark ? 'text-white' : 'text-black'
-                                    } opacity-90 hover:opacity-100`
-                              }`}
-                            >
-                              <IconComponent
-                                className={`w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 bg-transparent ${
-                                  isSelected
-                                    ? isDark
-                                      ? 'text-[#191919]'
-                                      : 'text-white'
-                                    : isDark
-                                    ? 'text-white'
-                                    : 'text-black'
-                                }`}
-                              />
-                            </motion.button>
-                          );
-                        })}
+                        {SKILLS_TOOLS.map((skill) => (
+                          <SkillCapsuleButton
+                            key={skill.id}
+                            skill={skill}
+                            isSelected={activeSkill?.id === skill.id}
+                            isDark={isDark}
+                            glassBtn={glassBtn}
+                            onHover={() => setActiveSkill(skill)}
+                            onSelect={() =>
+                              setActiveSkill((prev) =>
+                                prev?.id === skill.id ? null : skill
+                              )
+                            }
+                          />
+                        ))}
                       </div>
                     </div>
 
@@ -1003,47 +957,21 @@ export default function App() {
                         </span>
                       </div>
                       <div className="w-full grid grid-cols-4 gap-1.5 sm:gap-2.5 lg:gap-3">
-                        {SKILLS_DESIGN_TOOLS.map((skill) => {
-                          const isSelected = activeSkill?.id === skill.id;
-                          const IconComponent = skill.Icon;
-                          return (
-                            <motion.button
-                              key={skill.id}
-                              variants={SKILL_CAPSULE_VARIANTS}
-                              whileHover={{ y: -3, scale: 1.03 }}
-                              whileTap={{ scale: 0.96 }}
-                              type="button"
-                              onMouseEnter={() => setActiveSkill(skill)}
-                              onClick={() =>
-                                setActiveSkill((prev) =>
-                                  prev?.id === skill.id ? null : skill
-                                )
-                              }
-                              aria-label={`${skill.name} (${skill.category})`}
-                              className={`w-full py-2.5 sm:py-3 lg:py-3.5 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
-                                isSelected
-                                  ? isDark
-                                    ? 'bg-[#EAE0C8] text-[#191919] shadow-md scale-[1.02]'
-                                    : 'bg-[#191919] text-white shadow-md scale-[1.02]'
-                                  : `${glassBtn} ${
-                                      isDark ? 'text-white' : 'text-black'
-                                    } opacity-90 hover:opacity-100`
-                              }`}
-                            >
-                              <IconComponent
-                                className={`w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 bg-transparent ${
-                                  isSelected
-                                    ? isDark
-                                      ? 'text-[#191919]'
-                                      : 'text-white'
-                                    : isDark
-                                    ? 'text-white'
-                                    : 'text-black'
-                                }`}
-                              />
-                            </motion.button>
-                          );
-                        })}
+                        {SKILLS_DESIGN_TOOLS.map((skill) => (
+                          <SkillCapsuleButton
+                            key={skill.id}
+                            skill={skill}
+                            isSelected={activeSkill?.id === skill.id}
+                            isDark={isDark}
+                            glassBtn={glassBtn}
+                            onHover={() => setActiveSkill(skill)}
+                            onSelect={() =>
+                              setActiveSkill((prev) =>
+                                prev?.id === skill.id ? null : skill
+                              )
+                            }
+                          />
+                        ))}
                       </div>
                     </div>
                   </div>

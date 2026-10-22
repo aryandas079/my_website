@@ -250,7 +250,7 @@ export const CredentialsSection: React.FC<CredentialsSectionProps> = ({
     };
   }, []);
 
-  // Slow automatic card scrolling animation (smoothly cycles every 3.8s when idle)
+  // Automatic card scrolling animation (smoothly cycles every 1.5s per card when idle)
   useEffect(() => {
     if (isHovered || isPhotoRevealed || showDetails) return;
 
@@ -258,7 +258,7 @@ export const CredentialsSection: React.FC<CredentialsSectionProps> = ({
       setActiveIndex((prev) => (prev + 1) % total);
       setShowDetails(false);
       setIsPhotoRevealed(false);
-    }, 3800);
+    }, 1500);
 
     return () => window.clearInterval(interval);
   }, [isHovered, isPhotoRevealed, showDetails, total]);
