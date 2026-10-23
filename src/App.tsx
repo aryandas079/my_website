@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
-import { ExternalLink, Check, Copy, X, Sun, Moon } from 'lucide-react';
+import { ExternalLink, Check, Copy, X, Sun, Moon, ChevronDown } from 'lucide-react';
 import { PROFILE } from './data/portfolioData';
 import { CutoutPortrait } from './components/HeroBlobPortrait';
 import {
@@ -24,13 +24,31 @@ import { ProjectsRoadmap } from './components/ProjectsRoadmap';
 import { CredentialsSection } from './components/CredentialsSection';
 import { SlicedNameRoller } from './components/SlicedNameRoller';
 import { SpecialtyRoller } from './components/SpecialtyRoller';
-import { assetPath } from './utils/assetPath';
 
-const HERO_IMAGE_PATH = assetPath('/assets/portrait/aryan-portrait.png');
-const NIT_SILCHAR_LOGO_PATH = assetPath('/assets/logos/nit-silchar.png');
-const GURUCHARAN_LOGO_PATH = assetPath('/assets/logos/gurucharan-college.png');
+const HERO_IMAGE_PATH = '/assets/portrait/aryan-portrait.png';
+const NIT_SILCHAR_LOGO_PATH = '/assets/logos/nit-silchar.png';
+const GURUCHARAN_LOGO_PATH = '/assets/logos/gurucharan-college.png';
 
 type FooterPopoutId = 'mail' | 'nits' | 'gcc' | 'languages' | null;
+
+const SECTION_ENTRANCE_VARIANTS: Variants = {
+  hidden: {
+    opacity: 0.35,
+    y: 28,
+    scale: 0.975,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: 'spring',
+      stiffness: 220,
+      damping: 26,
+      mass: 0.45,
+    },
+  },
+};
 
 const DOCK_CONTAINER_VARIANTS: Variants = {
   hidden: { opacity: 0, y: 14, scale: 0.98 },
@@ -185,8 +203,19 @@ export default function App() {
   const progressBarRef = useRef<HTMLDivElement>(null);
   const heroPortraitRef = useRef<HTMLDivElement>(null);
   const heroHaloRef = useRef<HTMLDivElement>(null);
+  const scrollIndicatorRef = useRef<HTMLDivElement>(null);
+  const sectionRefs = useRef<(HTMLElement | null)[]>([]);
+  const isSkillsOpenRef = useRef<boolean>(isSkillsOpen);
 
-  // 100% Native Compositor Scrolling + Buttery Smooth Hero Portrait Enlarge & Disappear on Scroll
+  useEffect(() => {
+    isSkillsOpenRef.current = isSkillsOpen;
+    if (isSkillsOpen && sectionRefs.current[1]) {
+      sectionRefs.current[1].style.opacity = '1';
+      sectionRefs.current[1].style.visibility = 'visible';
+    }
+  }, [isSkillsOpen]);
+
+  // 100% Native Compositor Scrolling + Buttery Smooth Hero Portrait & Subtle Cross-Section Opacity Transitions
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
@@ -209,7 +238,15 @@ export default function App() {
         progressBarRef.current.style.transform = `scaleX(${totalProgress.toFixed(4)})`;
       }
 
-      // 2. Enlarge & smoothly disappear the Hero portrait when scrolling down from Page 1
+      // 2. Smoothly fade out the floating scroll-down indicator over the first 85px of scroll
+      if (scrollIndicatorRef.current) {
+        const indicatorOpacity = Math.max(0, 1 - scrollTop / 85);
+        scrollIndicatorRef.current.style.opacity = indicatorOpacity.toFixed(3);
+        scrollIndicatorRef.current.style.pointerEvents = indicatorOpacity <= 0.05 ? 'none' : 'auto';
+        scrollIndicatorRef.current.style.visibility = indicatorOpacity <= 0.01 ? 'hidden' : 'visible';
+      }
+
+      // 3. Enlarge & smoothly disappear the Hero portrait when scrolling down from Page 1
       const fadeDistance = cachedVh * 0.68;
       if (scrollTop <= fadeDistance * 1.25) {
         const rawT = Math.max(0, Math.min(1, scrollTop / fadeDistance));
@@ -240,6 +277,65 @@ export default function App() {
           heroPortraitRef.current.style.visibility = 'hidden';
         }
       }
+
+      // 4. Subtle scroll-based opacity transitions between sections
+      // As the user reaches the end of one section, the next section gently fades in
+      const fadeRange = Math.min(cachedVh * 0.44, 380);
+      const isSkillsExpanded = isSkillsOpenRef.current;
+
+      sectionRefs.current.forEach((sectionEl, index) => {
+        if (!sectionEl) return;
+
+        // When full-page skills overlay is open, keep Section 2 at full opacity
+        if (index === 1 && isSkillsExpanded) {
+          sectionEl.style.opacity = '1';
+          sectionEl.style.visibility = 'visible';
+          return;
+        }
+
+        const top = sectionEl.offsetTop - scrollTop;
+        const height = sectionEl.offsetHeight || cachedVh;
+        const bottom = top + height;
+
+        // Outside viewport with safety buffer
+        if (top >= cachedVh + 80 || bottom <= -80) {
+          sectionEl.style.opacity = '0';
+          sectionEl.style.visibility = 'hidden';
+          return;
+        }
+
+        // Section 0 (Hero) starts fully visible at top of page
+        let enterOpacity = 1;
+        if (index > 0) {
+          if (top >= cachedVh) {
+            enterOpacity = 0.2;
+          } else if (top > cachedVh - fadeRange) {
+            const t = (cachedVh - top) / fadeRange;
+            const smoothT = t * t * (3 - 2 * t);
+            enterOpacity = 0.2 + 0.8 * smoothT;
+          } else {
+            enterOpacity = 1;
+          }
+        }
+
+        // Last section (Footer) stays fully visible at bottom of page
+        let exitOpacity = 1;
+        if (index < sectionRefs.current.length - 1) {
+          if (bottom <= 0) {
+            exitOpacity = 0.2;
+          } else if (bottom < fadeRange) {
+            const t = bottom / fadeRange;
+            const smoothT = t * t * (3 - 2 * t);
+            exitOpacity = 0.2 + 0.8 * smoothT;
+          } else {
+            exitOpacity = 1;
+          }
+        }
+
+        const targetOpacity = Math.max(0.2, Math.min(enterOpacity, exitOpacity));
+        sectionEl.style.opacity = targetOpacity.toFixed(3);
+        sectionEl.style.visibility = 'visible';
+      });
     };
 
     const onScroll = () => {
@@ -267,6 +363,50 @@ export default function App() {
       window.removeEventListener('resize', onResize);
     };
   }, []);
+
+  // Keyboard navigation: ArrowDown & ArrowUp to smooth-scroll between page sections
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+
+      // Do not intercept if focus is inside an input, textarea, or when full-page skills overlay is open
+      const activeTag = document.activeElement?.tagName.toLowerCase();
+      if (activeTag === 'input' || activeTag === 'textarea' || isSkillsOpen) return;
+
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      const currentScrollTop = container.scrollTop;
+      const validSections = sectionRefs.current.filter((el): el is HTMLElement => el !== null);
+
+      if (e.key === 'ArrowDown') {
+        const nextSec = validSections.find((el) => el.offsetTop > currentScrollTop + 24);
+        if (nextSec) {
+          e.preventDefault();
+          if (typeof container.scrollTo === 'function') {
+            container.scrollTo({ top: nextSec.offsetTop, behavior: 'smooth' });
+          } else {
+            nextSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      } else if (e.key === 'ArrowUp') {
+        const prevSec = [...validSections]
+          .reverse()
+          .find((el) => el.offsetTop < currentScrollTop - 24);
+        if (prevSec) {
+          e.preventDefault();
+          if (typeof container.scrollTo === 'function') {
+            container.scrollTo({ top: prevSec.offsetTop, behavior: 'smooth' });
+          } else {
+            prevSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSkillsOpen]);
 
   const scrollToNextSection = () => {
     const nextEl = document.getElementById('white-section');
@@ -321,15 +461,13 @@ export default function App() {
       ====================================================================== */}
       <section
         id="hero-section"
-        style={{ contain: 'layout style paint' }}
+        ref={(el) => {
+          sectionRefs.current[0] = el;
+        }}
+        style={{ contain: 'layout style paint', willChange: 'opacity' }}
         className="relative w-full h-screen min-h-[640px] overflow-hidden transform-gpu"
       >
-        {/* Full-Viewport Liquid Glass Stage Vessel */}
-        <div
-          className={`absolute inset-2.5 sm:inset-4 lg:inset-5 rounded-[28px] sm:rounded-[36px] pointer-events-none z-0 ${glassSurface}`}
-        />
-
-        {/* Top Row: Liquid Glass Header Capsules (Role on Left + Long Arrow on Right) */}
+        {/* Top Row: Liquid Glass Header Capsules (Role on Left + Controls on Right) */}
         <motion.header
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -339,21 +477,21 @@ export default function App() {
             damping: 30,
             mass: 0.4,
           }}
-          className="absolute top-6 sm:top-8 lg:top-10 left-6 right-6 sm:left-10 sm:right-10 lg:left-14 lg:right-14 z-40 flex flex-row items-center justify-between gap-3"
+          className="absolute top-4 sm:top-8 lg:top-10 left-3.5 right-3.5 sm:left-8 sm:right-8 lg:left-12 lg:right-12 z-40 flex flex-row items-center justify-between gap-2 sm:gap-3 max-w-full"
         >
           {/* Top-Left: "Aspiring Data Scientist & ML Engineer" inside Liquid Glass Button */}
           <motion.div
             whileHover={{ scale: 1.02, y: -1 }}
             transition={{ type: 'spring', stiffness: 550, damping: 28, mass: 0.35 }}
-            className={`${glassBtn} px-3.5 sm:px-5 py-2 rounded-2xl font-sans font-normal tracking-tight whitespace-nowrap`}
-            style={{ fontSize: 'clamp(0.72rem, 1.3vw, 1.15rem)' }}
+            className={`${glassBtn} px-2.5 sm:px-4 lg:px-5 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl font-sans font-normal tracking-tight truncate max-w-[58vw] sm:max-w-none shrink min-w-0`}
+            style={{ fontSize: 'clamp(0.68rem, 1.25vw, 1.15rem)' }}
+            title="Aspiring Data Scientist & ML Engineer"
           >
-            Aspiring Data Scientist &amp; ML Engineer
+            <span className="truncate">Aspiring Data Scientist &amp; ML Engineer</span>
           </motion.div>
 
-          {/* Top-Right Controls: Theme Toggle (Sun/Moon) + Long Horizontal Arrow inside Liquid Glass Buttons */}
-          <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0">
-
+          {/* Top-Right Controls: Theme Toggle (Sun/Moon) + Horizontal Arrow inside Liquid Glass Buttons */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 lg:gap-3.5 shrink-0">
             {/* Theme Toggle Button with Sun / Moon Icon */}
             <motion.button
               type="button"
@@ -363,7 +501,7 @@ export default function App() {
               whileHover={{ scale: 1.06, y: -1 }}
               whileTap={{ scale: 0.92 }}
               transition={{ type: 'spring', stiffness: 600, damping: 28, mass: 0.3 }}
-              className={`${glassBtn} inline-flex items-center justify-center p-2 sm:p-2.5 rounded-2xl cursor-pointer shrink-0 focus-visible:outline-none`}
+              className={`${glassBtn} inline-flex items-center justify-center p-1.5 sm:p-2.5 rounded-xl sm:rounded-2xl cursor-pointer shrink-0 focus-visible:outline-none`}
             >
               <AnimatePresence mode="wait" initial={false}>
                 {isDark ? (
@@ -382,7 +520,7 @@ export default function App() {
                     key="moon-icon"
                     initial={{ opacity: 0, rotate: 60, scale: 0.7 }}
                     animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                    exit={{ opacity: 0, rotate: -60, scale: 0.7 }}
+                    exit={{ opacity: 0, rotate: 60, scale: 0.7 }}
                     transition={{ duration: 0.11, ease: 'easeOut' }}
                     className="flex items-center justify-center"
                   >
@@ -392,33 +530,32 @@ export default function App() {
               </AnimatePresence>
             </motion.button>
 
-            {/* Long Horizontal Arrow inside Liquid Glass Button */}
+            {/* Horizontal Arrow inside Liquid Glass Button */}
             <motion.button
               type="button"
               onClick={scrollToNextSection}
               aria-label="Scroll to next section"
-              whileHover={{ scale: 1.04, x: 3 }}
+              whileHover={{ scale: 1.04, x: 2 }}
               whileTap={{ scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 580, damping: 28, mass: 0.35 }}
-              className={`${glassBtn} group inline-flex items-center px-3.5 sm:px-5 py-2.5 rounded-2xl cursor-pointer shrink-0 focus-visible:outline-none`}
+              className={`${glassBtn} group inline-flex items-center px-2.5 sm:px-4 lg:px-5 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl cursor-pointer shrink-0 focus-visible:outline-none`}
             >
               <svg
-                viewBox="0 0 130 24"
+                viewBox="0 0 60 16"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-3.5 sm:h-4.5 transition-transform duration-200 ease-out group-hover:translate-x-1.5"
-                style={{ width: 'clamp(3.25rem, 7.5vw, 7.25rem)' }}
+                className="w-6 sm:w-10 lg:w-12 h-3.5 sm:h-4 transition-transform duration-200 ease-out group-hover:translate-x-1"
               >
                 <line
                   x1="0"
-                  y1="12"
-                  x2="126"
-                  y2="12"
+                  y1="8"
+                  x2="56"
+                  y2="8"
                   stroke="currentColor"
                   strokeWidth="1.75"
                 />
                 <polyline
-                  points="114,4 127,12 114,20"
+                  points="50,3 57,8 50,13"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="1.75"
@@ -431,7 +568,12 @@ export default function App() {
         </motion.header>
 
         {/* Center Stage: Strictly Fixed Portrait + Solid & Wireframe "PORTFOLIO" */}
-        <div className="absolute inset-x-0 top-16 bottom-16 flex items-center justify-center pointer-events-none">
+        <motion.div
+          variants={SECTION_ENTRANCE_VARIANTS}
+          initial="hidden"
+          animate="visible"
+          className="absolute inset-x-0 top-16 bottom-16 flex items-center justify-center pointer-events-none transform-gpu"
+        >
           <div className="relative w-full flex items-center justify-center">
             {/* Portrait Container (Bigger on Mobile: 88vw, Balanced on Tablet & Desktop) */}
             <div className="relative w-[88vw] max-w-[410px] sm:w-[60vw] sm:max-w-[470px] md:w-[54vw] md:max-w-[500px] lg:w-[44vw] lg:max-w-[560px] max-h-[66vh] aspect-square flex items-center justify-center">
@@ -446,14 +588,14 @@ export default function App() {
               {/* Layer 1: Back Solid PORTFOLIO Text (Fixed at 55% height of Portrait Box) */}
               <div
                 aria-hidden="true"
-                className="absolute left-1/2 top-[55%] -translate-x-1/2 -translate-y-1/2 w-screen z-10 text-center pointer-events-none px-3"
+                className="absolute left-1/2 top-[55%] -translate-x-1/2 -translate-y-1/2 w-full max-w-full z-10 text-center pointer-events-none px-2 overflow-visible py-4"
               >
                 <span
-                  className={`block w-full text-center font-display uppercase leading-[0.82] tracking-[0.01em] whitespace-nowrap transition-colors duration-200 ${
+                  className={`block w-full text-center font-display uppercase leading-[1.0] tracking-[0.01em] whitespace-nowrap transition-colors duration-200 ${
                     isDark ? 'text-[#EAE0C8]' : 'text-[#191919]'
                   }`}
                   style={{
-                    fontSize: 'clamp(3.85rem, min(18.8vw, 28vh), 19rem)',
+                    fontSize: 'clamp(3.1rem, min(17.5vw, 24vh), 19rem)',
                     textShadow: isDark
                       ? '0 10px 30px rgba(0, 0, 0, 0.45)'
                       : '0 8px 24px rgba(25, 25, 25, 0.08)',
@@ -479,14 +621,14 @@ export default function App() {
                 />
               </div>
 
-              {/* Layer 3: Front Hollow Wireframe Stroke PORTFOLIO Text (Strictly Fixed) */}
-              <div className="absolute left-1/2 top-[55%] -translate-x-1/2 -translate-y-1/2 w-screen z-30 text-center pointer-events-none px-3">
+              {/* Layer 3: Front Hollow Wireframe Stroke PORTFOLIO Text (Strictly Fixed, Full Letter Tops Visible) */}
+              <div className="absolute left-1/2 top-[55%] -translate-x-1/2 -translate-y-1/2 w-full max-w-full z-30 text-center pointer-events-none px-2 overflow-visible py-4">
                 <h1
-                  className={`w-full text-center font-display uppercase leading-[0.82] tracking-[0.01em] whitespace-nowrap ${
+                  className={`w-full text-center font-display uppercase leading-[1.0] tracking-[0.01em] whitespace-nowrap ${
                     isDark ? 'portfolio-stroke-dark' : 'portfolio-stroke-light'
                   }`}
                   style={{
-                    fontSize: 'clamp(3.85rem, min(18.8vw, 28vh), 19rem)',
+                    fontSize: 'clamp(3.1rem, min(17.5vw, 24vh), 19rem)',
                   }}
                 >
                   PORTFOLIO
@@ -494,9 +636,34 @@ export default function App() {
               </div>
             </div>
           </div>
+        </motion.div>
+
+        {/* Floating Scroll-Down Arrow Indicator (fades out as user scrolls) */}
+        <div
+          ref={scrollIndicatorRef}
+          style={{ willChange: 'opacity, transform' }}
+          className="absolute bottom-12 sm:bottom-14 lg:bottom-16 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center pointer-events-auto"
+        >
+          <motion.button
+            type="button"
+            onClick={scrollToNextSection}
+            aria-label="Scroll down to explore"
+            whileHover={{ scale: 1.1, y: 1 }}
+            whileTap={{ scale: 0.92 }}
+            transition={{ type: 'spring', stiffness: 550, damping: 26 }}
+            className={`${glassBtn} p-2 sm:p-2.5 rounded-full cursor-pointer flex items-center justify-center shadow-sm`}
+          >
+            <motion.div
+              animate={{ y: [0, 4.5, 0] }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+              className="flex items-center justify-center"
+            >
+              <ChevronDown className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.25]" />
+            </motion.div>
+          </motion.button>
         </div>
 
-        {/* Bottom Row: Liquid Glass Capsules (Name on Left in Inter + Email on Right) */}
+        {/* Bottom Row: Liquid Glass Capsules (Name on Left in Inter + Entire Email Highlighted on Right) */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -506,84 +673,90 @@ export default function App() {
             damping: 30,
             mass: 0.4,
           }}
-          className="absolute bottom-6 sm:bottom-8 lg:bottom-10 left-6 right-6 sm:left-10 sm:right-10 lg:left-14 lg:right-14 z-40 flex flex-row items-center justify-between gap-3"
+          className="absolute bottom-3 sm:bottom-6 lg:bottom-8 left-3.5 right-3.5 sm:left-8 sm:right-8 lg:left-12 lg:right-12 z-40 flex flex-row items-center justify-between gap-2 max-w-full"
         >
           {/* Bottom-Left: Aryan Das in Inter font inside Liquid Glass Capsule */}
           <motion.div
             whileHover={{ scale: 1.03, y: -1 }}
             transition={{ type: 'spring', stiffness: 550, damping: 28, mass: 0.35 }}
-            className={`${glassBtn} px-4 sm:px-5 py-2 rounded-2xl font-sans font-normal tracking-tight whitespace-nowrap`}
-            style={{ fontSize: 'clamp(0.75rem, 1.35vw, 1.15rem)' }}
+            className={`${glassBtn} px-3 sm:px-5 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl font-sans font-normal tracking-tight whitespace-nowrap shrink-0`}
+            style={{ fontSize: 'clamp(0.72rem, 1.25vw, 1.15rem)' }}
           >
             {PROFILE.name}
           </motion.div>
 
-          {/* Bottom-Right: Email Link aryandas.original@gmail.com inside Liquid Glass Capsule */}
+          {/* Bottom-Right: Entire Email Covered & Highlighted inside Liquid Glass Capsule */}
           <motion.a
             href="mailto:aryandas.original@gmail.com"
             whileHover={{ scale: 1.03, y: -1 }}
             whileTap={{ scale: 0.96 }}
             transition={{ type: 'spring', stiffness: 550, damping: 28, mass: 0.35 }}
-            className={`${glassBtn} px-4 sm:px-5 py-2 rounded-2xl font-sans font-normal tracking-tight whitespace-nowrap`}
-            style={{ fontSize: 'clamp(0.75rem, 1.35vw, 1.15rem)' }}
+            className={`${glassBtn} px-3 sm:px-5 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl font-sans font-normal tracking-tight whitespace-nowrap shrink-0 text-right`}
+            style={{ fontSize: 'clamp(0.62rem, 2vw, 1.15rem)' }}
+            title="aryandas.original@gmail.com"
           >
-            aryandas.original@gmail.com
+            <span className="whitespace-nowrap">aryandas.original@gmail.com</span>
           </motion.a>
         </motion.div>
       </section>
 
       {/* =====================================================================
           SECTION 2: SKILLS & SPECIALTY ROLLER SECTION
-          - Left 65%: Big Transparent Liquid Glass Button Named "Skills"
-          - Right 35%: Vertical Specialty Roller with 3 Periodic Dots
+          - Prominent 52% / 48% Layout matching image_7e4477e1.png
+          - Left: Tall, Prominent Liquid Glass Button Named "Skills"
+          - Right: Vertical Specialty Roller with Large Typography
       ====================================================================== */}
       <section
         id="white-section"
-        style={{ contain: 'layout style paint' }}
+        ref={(el) => {
+          sectionRefs.current[1] = el;
+        }}
+        style={{ contain: 'layout style paint', willChange: 'opacity' }}
         className="relative w-full h-screen min-h-[640px] overflow-hidden select-none transform-gpu"
       >
-        {/* Full-Viewport Liquid Glass Stage Vessel */}
-        <div
-          className={`absolute inset-2.5 sm:inset-4 lg:inset-5 rounded-[28px] sm:rounded-[36px] pointer-events-none z-0 ${glassSurface}`}
-        />
-
-        {/* 65% Skills Button Tab Part (Left) + 35% Specialty Rolling Section (Right) */}
-        <div className="relative z-10 w-full h-full px-5 sm:px-8 lg:px-12 py-6 sm:py-8 lg:py-10 flex flex-row items-center justify-between gap-3 sm:gap-6 lg:gap-10">
-          {/* Left 65%: Large Transparent Liquid Glass Button Tab Named "Skills" */}
-          <div className="w-[65%] h-full flex items-center justify-center">
+        {/* Skills Section (Left) + Specialty Rolling Section (Right) */}
+        <motion.div
+          variants={SECTION_ENTRANCE_VARIANTS}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: false, amount: 0.2 }}
+          className="relative z-10 w-full h-full px-3 sm:px-8 lg:px-12 py-4 sm:py-8 lg:py-10 flex flex-row items-center justify-between gap-2 sm:gap-6 lg:gap-10 transform-gpu"
+        >
+          {/* Left: Prominent Rectangular Liquid Glass Button Named "Skills" */}
+          <div className="w-[52%] sm:w-[54%] h-full flex items-center justify-center">
             <motion.button
               type="button"
               onClick={() => {
                 setActiveSkill(null);
                 setIsSkillsOpen(true);
               }}
-              whileHover={{ scale: 1.012, y: -2 }}
+              whileHover={{ scale: 1.018, y: -2 }}
               whileTap={{ scale: 0.985 }}
               transition={{ type: 'spring', stiffness: 520, damping: 30, mass: 0.4 }}
               aria-label="Open Skills in full page"
-              className={`${glassBtn} relative w-full h-[72%] sm:h-[78%] lg:h-[82%] rounded-[24px] sm:rounded-[32px] lg:rounded-[36px] flex flex-col items-center justify-center overflow-hidden group cursor-pointer`}
+              className={`${glassBtn} relative w-[90%] sm:w-[86%] lg:w-[80%] max-w-[250px] sm:max-w-[340px] lg:max-w-[420px] h-[74%] sm:h-[80%] lg:h-[84%] rounded-[28px] sm:rounded-[36px] lg:rounded-[42px] flex flex-col items-center justify-center overflow-hidden group cursor-pointer`}
             >
               {/* Translucent inner Liquid Glass halo */}
               <div
                 aria-hidden="true"
-                className={`w-28 h-28 sm:w-44 sm:h-44 lg:w-64 lg:h-64 rounded-full ${glassSurface} opacity-65 transition-transform duration-200 group-hover:scale-110 flex items-center justify-center`}
+                className={`w-24 h-24 sm:w-36 sm:h-36 lg:w-52 lg:h-52 rounded-full ${glassSurface} opacity-70 transition-transform duration-200 group-hover:scale-110 flex items-center justify-center`}
               />
               <span
                 className={`absolute font-sans font-semibold tracking-[-0.03em] transition-colors duration-200 ${
                   isDark ? 'text-white' : 'text-[#191919]'
                 }`}
-                style={{ fontSize: 'clamp(1.85rem, 5vw, 4.5rem)' }}
+                style={{ fontSize: 'clamp(1.65rem, 4.2vw, 4.2rem)' }}
               >
                 Skills
               </span>
             </motion.button>
           </div>
 
-          {/* Right 35%: Vertical Specialty Roller with Stationary 3 Dots on Left */}
-          <div className="w-[35%] h-full flex items-center justify-start">
+          {/* Right: Vertical Specialty Roller with Stationary 3 Dots on Left */}
+          <div className="w-[48%] sm:w-[46%] h-full flex items-center justify-start">
             <SpecialtyRoller isDark={isDark} />
           </div>
-        </div>
+        </motion.div>
 
         {/* FULL-PAGE SKILLS OVERLAY (Consumes the entire section with a solid opaque background when "Skills" is clicked) */}
         <AnimatePresence>
@@ -956,36 +1129,44 @@ export default function App() {
       ====================================================================== */}
       <section
         id="projects-section"
-        style={{ contain: 'layout style paint' }}
+        ref={(el) => {
+          sectionRefs.current[2] = el;
+        }}
+        style={{ contain: 'layout style paint', willChange: 'opacity' }}
         className="relative w-full h-screen min-h-[640px] overflow-hidden select-none transform-gpu"
       >
-        {/* Full-Viewport Liquid Glass Stage Vessel */}
-        <div
-          className={`absolute inset-2.5 sm:inset-4 lg:inset-5 rounded-[28px] sm:rounded-[36px] pointer-events-none z-0 ${glassSurface}`}
-        />
-
-        <div className="relative z-10 w-full h-full flex items-center justify-center">
+        <motion.div
+          variants={SECTION_ENTRANCE_VARIANTS}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: false, amount: 0.2 }}
+          className="relative z-10 w-full h-full flex items-center justify-center transform-gpu"
+        >
           <ProjectsRoadmap isDark={isDark} />
-        </div>
+        </motion.div>
       </section>
 
       {/* =====================================================================
           SECTION 4: DEDICATED CREDENTIALS SECTION
-          - Vertical Stepped Stack of Blurred Certificate Cards (image_c19289cb.png)
+          - Vertical Stepped Stack of Certificate Cards
       ====================================================================== */}
       <section
         id="credentials-section"
-        style={{ contain: 'layout style paint' }}
+        ref={(el) => {
+          sectionRefs.current[3] = el;
+        }}
+        style={{ contain: 'layout style paint', willChange: 'opacity' }}
         className="relative w-full h-screen min-h-[640px] overflow-hidden select-none transform-gpu"
       >
-        {/* Full-Viewport Liquid Glass Stage Vessel */}
-        <div
-          className={`absolute inset-2.5 sm:inset-4 lg:inset-5 rounded-[28px] sm:rounded-[36px] pointer-events-none z-0 ${glassSurface}`}
-        />
-
-        <div className="relative z-10 w-full h-full flex items-center justify-center">
+        <motion.div
+          variants={SECTION_ENTRANCE_VARIANTS}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: false, amount: 0.2 }}
+          className="relative z-10 w-full h-full flex items-center justify-center transform-gpu"
+        >
           <CredentialsSection isDark={isDark} />
-        </div>
+        </motion.div>
       </section>
 
       {/* =====================================================================
@@ -994,18 +1175,20 @@ export default function App() {
       ====================================================================== */}
       <footer
         id="footer-section"
+        ref={(el) => {
+          sectionRefs.current[4] = el;
+        }}
         onClick={() => setActivePopout(null)}
-        style={{ contain: 'layout style paint' }}
+        style={{ contain: 'layout style paint', willChange: 'opacity' }}
         className="relative w-full h-screen min-h-[640px] flex flex-col items-center justify-center overflow-hidden transform-gpu"
       >
-        {/* Full-Viewport Liquid Glass Stage Vessel */}
-        <div
-          className={`absolute inset-2.5 sm:inset-4 lg:inset-5 rounded-[28px] sm:rounded-[36px] pointer-events-none z-0 ${glassSurface}`}
-        />
-
         {/* Center Interactive Area: Sliced "ARYAN DAS" Typography Above + Social Links Dock Below */}
-        <div
-          className="relative z-20 w-full max-w-[1100px] h-full px-4 sm:px-8 py-6 sm:py-10 flex flex-col items-center justify-between"
+        <motion.div
+          variants={SECTION_ENTRANCE_VARIANTS}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: false, amount: 0.2 }}
+          className="relative z-20 w-full max-w-[1100px] h-full px-4 sm:px-8 py-6 sm:py-10 flex flex-col items-center justify-between transform-gpu"
           onClick={(e) => e.stopPropagation()}
         >
 
@@ -1376,8 +1559,9 @@ export default function App() {
             </motion.a>
             </motion.div>
           </div>
-        </div>
+        </motion.div>
       </footer>
     </div>
   );
 }
+

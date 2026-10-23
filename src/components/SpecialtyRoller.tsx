@@ -53,12 +53,12 @@ export const SpecialtyRoller: React.FC<SpecialtyRollerProps> = ({
 
   const total = SPECIALTIES.length;
 
-  // Responsive metrics tuned so all rows and the 3 wriggling dots fit cleanly inside the 35% column
+  // Responsive metrics tuned so all rows and the 3 wriggling dots fit cleanly with prominent typography
   const isMobile = viewportWidth < 640;
   const isTablet = viewportWidth >= 640 && viewportWidth < 1024;
-  const rowSpacing = isMobile ? 26 : isTablet ? 46 : 62;
-  const activeIndentX = isMobile ? 22 : isTablet ? 40 : 56;
-  const preActiveIndentX = isMobile ? 9 : isTablet ? 16 : 23;
+  const rowSpacing = isMobile ? 38 : isTablet ? 50 : 66;
+  const activeIndentX = isMobile ? 26 : isTablet ? 42 : 58;
+  const preActiveIndentX = isMobile ? 11 : isTablet ? 17 : 24;
 
   return (
     <div
@@ -72,7 +72,7 @@ export const SpecialtyRoller: React.FC<SpecialtyRollerProps> = ({
     >
       {/* Vertical cylinder mask so words entering at bottom & leaving at top fade smoothly */}
       <div
-        className="relative w-full h-[220px] sm:h-[360px] lg:h-[470px] flex items-center"
+        className="relative w-full h-[290px] sm:h-[390px] lg:h-[490px] flex items-center"
         style={{
           maskImage:
             'linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%)',
@@ -91,7 +91,7 @@ export const SpecialtyRoller: React.FC<SpecialtyRollerProps> = ({
             viewBox="0 0 42 28"
             fill="currentColor"
             xmlns="http://www.w3.org/2000/svg"
-            className="w-[17px] h-[12px] sm:w-[31px] sm:h-[21px] lg:w-[42px] lg:h-[28px] overflow-visible"
+            className="w-[22px] h-[15px] sm:w-[32px] sm:h-[22px] lg:w-[42px] lg:h-[28px] overflow-visible"
           >
             {/* Dot 1 (Left End) — Oscillates from top (-5.5) to bottom (+5.5) and back */}
             <motion.circle
@@ -212,7 +212,9 @@ export const SpecialtyRoller: React.FC<SpecialtyRollerProps> = ({
               >
                 <span
                   style={{
-                    fontSize: 'clamp(0.86rem, 3.1vw, 3.15rem)',
+                    fontSize: isMobile
+                      ? 'clamp(1.22rem, 4.8vw, 1.55rem)'
+                      : 'clamp(1.5rem, 3.2vw, 3.25rem)',
                   }}
                 >
                   {word}

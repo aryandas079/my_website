@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ArrowUpRight, Globe, RotateCw } from 'lucide-react';
 import { GitHubLogo } from './FooterIcons';
-import { assetPath } from '../utils/assetPath';
 
 export interface ProjectRoadmapItem {
   id: string;
@@ -112,8 +111,8 @@ function processTransparentLogo(src: string): Promise<string> {
 }
 
 if (typeof window !== 'undefined') {
-  processTransparentLogo(assetPath('/assets/projects/vibes-music.png'));
-  processTransparentLogo(assetPath('/assets/projects/erms-leaf.png'));
+  processTransparentLogo('/assets/projects/vibes-music.png');
+  processTransparentLogo('/assets/projects/erms-leaf.png');
 }
 
 /**
@@ -190,7 +189,7 @@ const VibesLogo: React.FC<{ className?: string }> = ({
   className = 'w-7 h-7',
 }) => (
   <TransparentAssetLogo
-    src={assetPath('/assets/projects/vibes-music.png')}
+    src="/assets/projects/vibes-music.png"
     alt="Vibes Sine & Magnify Logo"
     className={className}
   />
@@ -203,7 +202,7 @@ const IdleLogo: React.FC<{ className?: string }> = ({
   className = 'w-7 h-7',
 }) => (
   <img
-    src={assetPath('/assets/projects/idle-portfolio.png')}
+    src="/assets/projects/idle-portfolio.png"
     alt="IDLE Logo"
     referrerPolicy="no-referrer"
     draggable={false}
@@ -218,7 +217,7 @@ const ErmsLogo: React.FC<{ className?: string }> = ({
   className = 'w-7 h-7',
 }) => (
   <TransparentAssetLogo
-    src={assetPath('/assets/projects/erms-leaf.png')}
+    src="/assets/projects/erms-leaf.png"
     alt="ERMS Green Leaf Logo"
     className={className}
   />
@@ -331,8 +330,8 @@ export const ProjectsRoadmap: React.FC<{ isDark?: boolean }> = ({
 
   // Pre-warm project logo assets on mount so 3D card flips never block the main thread
   useEffect(() => {
-    processTransparentLogo(assetPath('/assets/projects/vibes-music.png'));
-    processTransparentLogo(assetPath('/assets/projects/erms-leaf.png'));
+    processTransparentLogo('/assets/projects/vibes-music.png');
+    processTransparentLogo('/assets/projects/erms-leaf.png');
   }, []);
 
   useEffect(() => {

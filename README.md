@@ -1,29 +1,20 @@
-# Aryan Das — Personal Portfolio
-A minimalist, high-performance personal landing page and portfolio for **Aryan Das** (Electrical Engineering undergraduate at NIT Silchar, Aspiring Data Scientist & ML Engineer).
-## Tech Stack
-- **Framework:** React 19 + TypeScript
-- **Bundler & Tooling:** Vite
-- **Styling:** Tailwind CSS + Lucide Icons
-- **Animation:** Motion (Framer Motion)
----
-## Getting Started
-### 1. Install Dependencies
-```bash
-npm install
-```
-### 2. Configure Environment (Optional)
-If you're using API-dependent features, copy the `.env.example` file:
-```bash
-cp .env.example .env
-```
-### 3. Run Development Server
-```bash
-npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
----
-## Scripts
-- `npm run dev` - Starts the local development server at port 3000
-- `npm run build` - Generates optimized production build in `dist/`
-- `npm run preview` - Locally preview the production build
-- `npm run lint` - Runs TypeScript type-checking
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
+</div>
+
+# Run and deploy your AI Studio app
+
+This contains everything you need to run your app locally.
+
+View your app in AI Studio: https://ai.studio/apps/d6d5de67-b79b-4f89-ade3-dda01c5c400d
+
+## Run Locally
+
+**Prerequisites:**  Node.js
+
+
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`
