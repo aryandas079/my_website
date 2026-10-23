@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { assetPath } from '../utils/assetPath';
 
 export interface CredentialCardItem {
   id: string;
@@ -26,7 +27,7 @@ export const CREDENTIAL_CARDS: CredentialCardItem[] = [
       'Recommender Systems',
       'Reinforcement Learning',
     ],
-    image: '/assets/credentials/stanford-ml.png',
+    image: assetPath('/assets/credentials/stanford-ml.png'),
   },
   {
     id: 'data-scientist-associate',
@@ -36,7 +37,7 @@ export const CREDENTIAL_CARDS: CredentialCardItem[] = [
     issuedDate: 'Issued Apr 2026 · Expires Apr 2028',
     credentialId: 'Credential ID DSA0010107575598',
     skills: ['Data Visualization', 'Data Science', 'Exploratory Data Analysis'],
-    image: '/assets/credentials/datacamp-ds.png',
+    image: assetPath('/assets/credentials/datacamp-ds.png'),
   },
   {
     id: 'full-stack-development',
@@ -52,7 +53,7 @@ export const CREDENTIAL_CARDS: CredentialCardItem[] = [
       'JavaScript',
       'TypeScript',
     ],
-    image: '/assets/credentials/scrimba-fullstack.png',
+    image: assetPath('/assets/credentials/scrimba-fullstack.png'),
   },
   {
     id: 'cs50x-harvard',
@@ -68,7 +69,7 @@ export const CREDENTIAL_CARDS: CredentialCardItem[] = [
       'SQL',
       'Data Structures & Algorithms',
     ],
-    image: '/assets/credentials/harvard-cs50x.png',
+    image: assetPath('/assets/credentials/harvard-cs50x.png'),
   },
   {
     id: 'ai-fluency-students',
@@ -82,7 +83,7 @@ export const CREDENTIAL_CARDS: CredentialCardItem[] = [
       'AI Fluency',
       'Responsible AI Integration',
     ],
-    image: '/assets/credentials/anthropic-ai.png',
+    image: assetPath('/assets/credentials/anthropic-ai.png'),
   },
   {
     id: 'career-essentials-genai',
@@ -92,7 +93,7 @@ export const CREDENTIAL_CARDS: CredentialCardItem[] = [
     issuedDate: 'Issued Dec 2025',
     credentialId: 'Certificate ID d8cb877f1de1e8ff59425ac0d6473047',
     skills: ['Microsoft Copilot', 'Generative AI', 'Responsible AI'],
-    image: '/assets/credentials/microsoft-genai.png',
+    image: assetPath('/assets/credentials/microsoft-genai.png'),
   },
   {
     id: 'gemini-certified-student',
@@ -102,7 +103,7 @@ export const CREDENTIAL_CARDS: CredentialCardItem[] = [
     issuedDate: 'Issued Nov 2025 · Expires Nov 2028',
     credentialId: 'University Qualification · Google AI',
     skills: ['Google Gemini', 'Generative AI', 'Google AI Competency'],
-    image: '/assets/credentials/google-gemini.png',
+    image: assetPath('/assets/credentials/google-gemini.png'),
   },
 ];
 
@@ -508,4 +509,3 @@ export const CredentialsSection: React.FC<CredentialsSectionProps> = ({
     </div>
   );
 };
-

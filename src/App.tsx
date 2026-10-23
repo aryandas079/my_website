@@ -24,10 +24,11 @@ import { ProjectsRoadmap } from './components/ProjectsRoadmap';
 import { CredentialsSection } from './components/CredentialsSection';
 import { SlicedNameRoller } from './components/SlicedNameRoller';
 import { SpecialtyRoller } from './components/SpecialtyRoller';
+import { assetPath } from './utils/assetPath';
 
-const HERO_IMAGE_PATH = '/assets/portrait/aryan-portrait.png';
-const NIT_SILCHAR_LOGO_PATH = '/assets/logos/nit-silchar.png';
-const GURUCHARAN_LOGO_PATH = '/assets/logos/gurucharan-college.png';
+const HERO_IMAGE_PATH = assetPath('/assets/portrait/aryan-portrait.png');
+const NIT_SILCHAR_LOGO_PATH = assetPath('/assets/logos/nit-silchar.png');
+const GURUCHARAN_LOGO_PATH = assetPath('/assets/logos/gurucharan-college.png');
 
 type FooterPopoutId = 'mail' | 'nits' | 'gcc' | 'languages' | null;
 
@@ -1564,4 +1565,3 @@ export default function App() {
     </div>
   );
 }
-
