@@ -541,7 +541,7 @@
     }
 
     if (id === 'projects' && nextSectionEl) {
-      window.scrollTo({ top: viewportH * 5.28, behavior: 'smooth' });
+      window.scrollTo({ top: viewportH * 6.85, behavior: 'smooth' });
       return;
     }
 
@@ -1236,7 +1236,7 @@
         everyLimitBuildProgress = Math.max(0, everyLimitBuildProgress - dt * 1.85);
       }
 
-      const cardsTriggered = inProjectsZone && projectsPinnedProgress >= 0.34;
+      const cardsTriggered = inProjectsZone && projectsPinnedProgress >= 0.14;
       if (cardsTriggered && cardsBuildProgress < 1) {
         cardsBuildProgress = Math.min(1, cardsBuildProgress + dt * 1.15);
       } else if (!cardsTriggered && cardsBuildProgress > 0) {
@@ -1803,7 +1803,7 @@
                   : 'w-full max-w-[min(170px,42vw)] sm:max-w-[min(250px,34dvh)] md:max-w-[min(320px,46dvh)] lg:max-w-[min(390px,54dvh)]'}"
             >
               <img
-                src="/assets/aistudio/newProfile_ec248e2f.png"
+                src={`${import.meta.env.BASE_URL}assets/aistudio/newProfile_ec248e2f.png`}
                 alt="Aryan Das"
                 class="h-auto w-full object-contain transition-transform duration-500 select-none group-hover:scale-[1.02]"
               />
@@ -1936,7 +1936,7 @@
             {@const rel = cIdx - smoothCardIndex}
             {@const absRel = Math.abs(rel)}
             {@const isCenter = absRel < 0.45}
-            {@const cardSolidAlpha = Math.max(0, Math.min(1, (cardsBuildProgress - 0.34) / 0.54))}
+            {@const cardSolidAlpha = Math.max(0, Math.min(1, (cardsBuildProgress - 0.15) / 0.5))}
             {@const depthOpacity = Math.max(0, 1 - Math.max(0, absRel - 1.15) * 1.2) * cardSolidAlpha}
             {@const tx = rel * cardSpreadX}
             {@const ty = absRel * 8}

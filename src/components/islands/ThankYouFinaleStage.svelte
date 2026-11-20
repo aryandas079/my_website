@@ -111,7 +111,7 @@
       id: 'resume',
       label: 'Resume',
       handle: 'Aryan_Das_CV.pdf',
-      href: '/assets/aistudio/Profile_585ff650.pdf',
+      href: `${import.meta.env.BASE_URL}assets/aistudio/Profile_585ff650.pdf`,
       download: 'Aryan_Das_CV.pdf',
     },
   ];
