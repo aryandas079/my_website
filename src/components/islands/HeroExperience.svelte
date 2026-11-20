@@ -1623,7 +1623,7 @@
 <!-- ====================================================================== -->
 <section
   id="home-page"
-  class="stage-viewport relative z-10 flex h-[100dvh] w-full flex-col justify-end px-4 pb-6 sm:px-8 sm:pb-12 lg:pb-14"
+  class="stage-viewport relative z-10 flex h-[100dvh] w-full flex-col justify-end px-4 pb-12 sm:px-8 sm:pb-20 md:pb-24 lg:pb-28"
 >
   {#if dustMorphProgress < 0.18}
     <header
@@ -1673,13 +1673,13 @@
       data-exclude-pad-x="28"
       data-exclude-pad-top="22"
       data-exclude-pad-bottom="22"
-      class="relative inline-block"
+      class="relative inline-block max-w-full"
       style="opacity: {heroSolidOpacity.toFixed(3)};"
     >
       <h1
-        class="font-display text-[clamp(2.35rem,min(13vw,24dvh),13.5rem)] leading-[0.84] font-extrabold tracking-[-0.055em] text-[#ff261b] select-none"
+        class="font-display text-[clamp(2.2rem,min(13.2vw,20dvh),14.5rem)] leading-[0.88] font-extrabold tracking-[-0.055em] text-[#ff261b] select-none break-normal whitespace-nowrap"
       >
-        Aryan Das
+        aryandas
       </h1>
     </div>
   </div>

@@ -273,7 +273,7 @@
 
       const swirlScale = Math.min(1, Math.max(0.55, width / 1100));
 
-      const aryandasNorm = sampleWordPoints('Aryan Das', 680, 140, scaledWordCount);
+      const aryandasNorm = sampleWordPoints('aryandas', 680, 140, scaledWordCount);
       const aboutNorm = sampleWordPoints('about', 320, 100, scaledWordCount);
       const projectsNorm = sampleWordPoints('projects', 420, 100, scaledWordCount);
       const skillsNorm = sampleWordPoints('skills', 320, 100, scaledWordCount);
