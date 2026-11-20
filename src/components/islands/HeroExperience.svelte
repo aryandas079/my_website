@@ -637,7 +637,7 @@
       focusedReadmeHtml = renderGithubReadmeHtml(pin.readmeMarkdown, pin);
     }
 
-    // Trigger buttery-smooth GSAP 3D 180-degree card flip & slide-up entrance transitions
+    // Trigger smooth fade & scale-up entrance transitions
     requestAnimationFrame(() => {
       if (focusScrollContainer) {
         focusScrollContainer.scrollTop = 0;
@@ -651,56 +651,27 @@
         tl.fromTo(
           focusBackdropEl,
           { opacity: 0 },
-          { opacity: 1, duration: 0.42, ease: 'power2.out' },
+          { opacity: 1, duration: 0.35, ease: 'power2.out' },
           0
         );
       }
 
-      if (focusFlipStageEl) {
+      if (focusScrollContainer) {
         tl.fromTo(
-          focusFlipStageEl,
+          focusScrollContainer,
           {
-            rotateY: 0,
-            rotateX: 9,
-            scale: 0.88,
-            y: 54,
+            scale: 0.94,
+            y: 36,
+            opacity: 0,
           },
           {
-            rotateY: 180,
-            rotateX: 0,
             scale: 1,
             y: 0,
-            duration: 0.88,
+            opacity: 1,
+            duration: 0.45,
             ease: 'expo.out',
           },
           0
-        );
-      }
-
-      if (focusHeroStageEl) {
-        tl.fromTo(
-          focusHeroStageEl,
-          { opacity: 0, y: 34 },
-          { opacity: 1, y: 0, duration: 0.64, ease: 'expo.out' },
-          0.32
-        );
-      }
-
-      if (focusViewBtnEl) {
-        tl.fromTo(
-          focusViewBtnEl,
-          { opacity: 0, y: 22, scale: 0.95 },
-          { opacity: 1, y: 0, scale: 1, duration: 0.58, ease: 'expo.out' },
-          0.4
-        );
-      }
-
-      if (focusReadmeContainerEl) {
-        tl.fromTo(
-          focusReadmeContainerEl,
-          { opacity: 0, y: 68 },
-          { opacity: 0, y: 42, duration: 0.72, ease: 'expo.out' },
-          0.36
         );
       }
     });
@@ -723,29 +694,15 @@
     });
     focusFlipTimeline = tl;
 
-    if (focusReadmeContainerEl) {
+    if (focusScrollContainer) {
       tl.to(
-        focusReadmeContainerEl,
+        focusScrollContainer,
         {
+          scale: 0.94,
+          y: 28,
           opacity: 0,
-          y: 48,
-          duration: 0.32,
+          duration: 0.28,
           ease: 'power2.in',
-        },
-        0
-      );
-    }
-
-    if (focusFlipStageEl) {
-      tl.to(
-        focusFlipStageEl,
-        {
-          rotateY: 0,
-          rotateX: -5,
-          scale: 0.88,
-          y: 32,
-          duration: 0.56,
-          ease: 'expo.inOut',
         },
         0
       );
@@ -754,15 +711,9 @@
     if (focusBackdropEl) {
       tl.to(
         focusBackdropEl,
-        {
-          opacity: 0,
-          duration: 0.42,
-          ease: 'power2.inOut',
-        },
-        0.12
+        { opacity: 0, duration: 0.28, ease: 'power2.in' },
+        0.04
       );
-    } else {
-      focusedCardIdx = null;
     }
   }
 
@@ -2373,106 +2324,107 @@
   <div
     bind:this={focusBackdropEl}
     onclick={closeCardFocusView}
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/84 p-2.5 sm:p-6"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-3 sm:p-6"
     style="opacity: 0;"
   >
     <div
       onclick={(e) => e.stopPropagation()}
       class="relative h-[88dvh] max-h-[760px] w-full max-w-[min(860px,94vw)]"
-      style="perspective: 2200px;"
     >
-      <!-- GSAP 3D Flipping Card Container (0deg Front -> 180deg Back) -->
+      <!-- Modal Inner Container -->
       <div
-        bind:this={focusFlipStageEl}
-        class="relative h-full w-full will-change-transform"
-        style="transform-style: preserve-3d; transform: rotateY(0deg);"
+        bind:this={focusScrollContainer}
+        onscroll={handleFocusScroll}
+        class="focus-scroll-pane relative h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth rounded-[28px] border border-white/20 bg-[#0a0a0a] text-left text-white shadow-[0_36px_100px_rgba(0,0,0,0.95)]"
       >
-        <!-- FRONT FACE (Visible during the first half of the GSAP 3D flip) -->
-        <div
-          class="absolute inset-0 flex flex-col justify-between overflow-hidden rounded-[28px] border border-white/15 bg-[#0a0a0a] p-8 text-left text-white shadow-[0_36px_90px_rgba(0,0,0,0.85)] sm:p-10"
-          style="backface-visibility: hidden; -webkit-backface-visibility: hidden;"
-        >
-          <div class="relative z-10 flex items-center justify-between">
-            <span class="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 py-1 font-mono text-xs font-medium text-white">
-              <span class="h-2 w-2 rounded-full bg-white"></span>
+        <!-- Top Sticky Header Bar with Repo Metadata and Close Button -->
+        <div class="sticky top-0 z-30 flex items-center justify-between border-b border-white/10 bg-[#0a0a0a]/92 px-5 py-3.5 backdrop-blur-md sm:px-8 sm:py-4">
+          <div class="flex items-center gap-2.5">
+            <span class="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/10 px-2.5 py-1 font-mono text-[11px] font-medium text-white sm:text-xs">
+              <span class="h-2 w-2 rounded-full" style="background-color: {focusedPin.langColor || '#ffffff'};"></span>
               <span>{focusedPin.language}</span>
             </span>
-            <span class="font-mono text-xs font-semibold text-white/75">@aryandas079</span>
+            <span class="hidden font-mono text-xs font-semibold text-white/60 sm:inline">@aryandas079</span>
           </div>
-          <div class="relative z-10 mt-auto min-w-0 max-w-full">
-            <h3 class="w-full break-words [overflow-wrap:anywhere] font-display text-3xl leading-[1.08] font-extrabold tracking-tight text-white sm:text-4xl">
+
+          <button
+            type="button"
+            onclick={(e) => {
+              e.stopPropagation();
+              closeCardFocusView();
+            }}
+            aria-label="Close project details"
+            class="group inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 font-sans text-xs font-semibold text-white transition-all hover:border-white/40 hover:bg-white/20 active:scale-95 sm:px-4 sm:py-1.5 sm:text-sm"
+          >
+            <span>Close</span>
+            <span class="text-white/60 group-hover:text-white">✕</span>
+          </button>
+        </div>
+
+        <!-- STAGE 1: Clean Hero Section with Title, Description, and View Project Button -->
+        <div class="flex flex-col items-center justify-center px-6 py-10 text-center sm:px-14 sm:py-14">
+          <div
+            bind:this={focusHeroStageEl}
+            class="flex w-full max-w-full flex-col items-center"
+          >
+            <h3 class="w-full max-w-full break-words [overflow-wrap:anywhere] font-display text-3xl leading-[1.08] font-extrabold tracking-[-0.035em] text-white sm:text-5xl">
               {focusedPin.repoName.replace(/_/g, '_\u200B')}
             </h3>
-            <p class="mt-3 max-w-lg break-words font-sans text-sm leading-relaxed text-white/75">
+
+            <p class="mt-4 max-w-[560px] break-words font-sans text-sm leading-relaxed text-white/80 sm:text-base">
               {focusedPin.description}
             </p>
+
+            <!-- Action buttons: View Project (GitHub) + Scroll Hint -->
+            <div
+              bind:this={focusViewBtnEl}
+              class="mt-7 flex flex-wrap items-center justify-center gap-3.5"
+            >
+              <a
+                href={focusedPin.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3 font-sans text-sm font-bold tracking-tight text-[#0a0a0a] shadow-lg transition-all duration-200 hover:scale-[1.03] hover:bg-white/90"
+              >
+                <span>View on GitHub</span>
+                <span>↗</span>
+              </a>
+
+              <button
+                type="button"
+                onclick={() => {
+                  focusReadmeContainerEl?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                class="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/5 px-5 py-3 font-sans text-sm font-medium text-white/85 transition-all hover:bg-white/10"
+              >
+                <span>Read Overview</span>
+                <span class="text-xs text-[#ff261b]">↓</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- BACK FACE (Flipped 180° Focus View — Pure Black & White, Zero Clutter) -->
+        <!-- STAGE 2: Clean Project README Section -->
         <div
-          bind:this={focusScrollContainer}
-          onscroll={handleFocusScroll}
-          class="focus-scroll-pane absolute inset-0 overflow-y-auto scroll-smooth rounded-[28px] border border-white/18 bg-[#0a0a0a] text-left text-white shadow-[0_36px_100px_rgba(0,0,0,0.92)]"
-          style="backface-visibility: hidden; -webkit-backface-visibility: hidden; transform: rotateY(180deg);"
+          bind:this={focusReadmeContainerEl}
+          class="border-t border-white/12 bg-[#0d1117] px-6 py-8 text-white sm:px-12 sm:py-10"
         >
-          <!-- Top-Right Ferro-Fluid Close Button -->
-          <div class="sticky top-0 z-30 flex justify-end p-5 pointer-events-none">
-            <div class="pointer-events-auto">
-              <FluidNavButton
-                id="focus-close-btn"
-                label="Close"
-                compact={true}
-                lightRim={true}
-                onclick={(e) => {
-                  e.stopPropagation();
-                  closeCardFocusView();
-                }}
-              />
-            </div>
-          </div>
-
-          <!-- STAGE 1 (100% Full Initial View): Clean Title, Description & Black-and-White "View Project" Button -->
-          <div class="-mt-21 flex min-h-full flex-col items-center justify-center px-7 py-14 text-center sm:px-14">
-            <div
-              bind:this={focusHeroStageEl}
-              class="flex w-full max-w-full flex-col items-center will-change-transform"
+          <div class="mb-6 flex items-center justify-between border-b border-white/10 pb-3">
+            <span class="font-mono text-xs font-semibold uppercase tracking-wider text-white/60">
+              README.md
+            </span>
+            <a
+              href="{focusedPin.url}#readme"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="font-mono text-xs text-[#ff261b] hover:underline"
             >
-              <h3 class="w-full max-w-full break-words [overflow-wrap:anywhere] font-display text-3xl leading-[1.06] font-extrabold tracking-[-0.04em] text-white sm:text-5xl">
-                {focusedPin.repoName.replace(/_/g, '_\u200B')}
-              </h3>
-
-              <p class="mt-5 max-w-[520px] break-words font-sans text-sm leading-relaxed text-white/75 sm:text-base">
-                {focusedPin.description}
-              </p>
-
-              <!-- Pure Black & White "View Project" Button -->
-              <div
-                bind:this={focusViewBtnEl}
-                class="mt-9 flex items-center justify-center will-change-transform"
-              >
-                <a
-                  href={focusedPin.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="inline-flex items-center gap-2.5 rounded-xl bg-white px-8 py-3.5 font-sans text-sm font-bold tracking-tight text-[#0a0a0a] transition-all duration-200 hover:scale-[1.03] hover:bg-white/90"
-                >
-                  <span>View Project</span>
-                  <span>↗</span>
-                </a>
-              </div>
-            </div>
+              Open source on GitHub ↗
+            </a>
           </div>
 
-          <!-- STAGE 2 (Appears ONLY When Scrolled Down with Smooth GSAP Slide-Up): Clean Black & White Project README -->
-          <div
-            bind:this={focusReadmeContainerEl}
-            class="border-t border-white/12 bg-[#0a0a0a] px-6 py-10 text-white will-change-transform sm:px-12 sm:py-12"
-            style="opacity: 0; transform: translate3d(0, 42px, 0); pointer-events: {readmeRevealOpacity > 0.08 ? 'auto' : 'none'};"
-          >
-            <div class="gh-readme-body">
-              {@html focusedReadmeHtml}
-            </div>
+          <div class="gh-readme-body">
+            {@html focusedReadmeHtml}
           </div>
         </div>
       </div>
