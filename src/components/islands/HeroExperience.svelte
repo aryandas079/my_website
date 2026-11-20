@@ -1804,7 +1804,7 @@
                 : 'w-full max-w-[175px] sm:max-w-[260px] lg:max-w-[375px]'}"
             >
               <img
-                src="/assets/aistudio/newProfile_ec248e2f.png"
+                src={`${import.meta.env.BASE_URL}assets/aistudio/newProfile_ec248e2f.png`}
                 alt="Aryan Das"
                 class="h-auto w-full object-contain transition-transform duration-500 select-none group-hover:scale-[1.02]"
               />

@@ -1484,7 +1484,7 @@
 
       <!-- 3. Download my CV ↓ (Direct link to attached Profile_585ff650.pdf) -->
       <a
-        href="/assets/aistudio/Profile_585ff650.pdf"
+        href={`${import.meta.env.BASE_URL}assets/aistudio/Profile_585ff650.pdf`}
         download="Aryan_Das_CV.pdf"
         onpointerenter={handleLinkHover}
         onclick={(e) => {

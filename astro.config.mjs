@@ -195,6 +195,8 @@ function liveGithubPinsProxy() {
 }
 
 export default defineConfig({
+  site: 'https://aryandas079.github.io',
+  base: '/my_website/',
   devToolbar: {
     enabled: false,
   },
