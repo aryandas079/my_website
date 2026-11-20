@@ -5,7 +5,6 @@
     InstancedBinaryDustRenderer,
     detectDeviceGpuTier,
   } from '../../lib/three/InstancedBinaryDust';
-  import ClusterTopologyNetwork from './ClusterTopologyNetwork.svelte';
 
   interface Props {
     buildProgress?: number;
@@ -71,7 +70,7 @@
   );
 
   interface ConnectChannel {
-    id: 'instagram' | 'linkedin' | 'github' | 'mail' | 'resume' | 'cluster';
+    id: 'instagram' | 'linkedin' | 'github' | 'mail' | 'resume';
     label: string;
     handle: string;
     href?: string;
@@ -114,11 +113,6 @@
       handle: 'Aryan_Das_CV.pdf',
       href: '/assets/aistudio/Profile_585ff650.pdf',
       download: 'Aryan_Das_CV.pdf',
-    },
-    {
-      id: 'cluster',
-      label: '3D Cluster',
-      handle: 'Interactive Compute Topology',
     },
   ];
 
@@ -508,16 +502,6 @@
     } else {
       connectModalOpen = false;
     }
-  }
-
-  function openClusterTopology(e: MouseEvent): void {
-    e.stopPropagation();
-    emitModalIconBurst?.(e.clientX, e.clientY, 24);
-    connectModalOpen = false;
-    iconsReady = false;
-    hoveredChannelId = null;
-    resetIconDustCondensation?.();
-    clusterModalOpen = true;
   }
 
   async function handleMailIconClick(e: MouseEvent): Promise<void> {
@@ -1415,60 +1399,13 @@
         >
           <div class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3.5">
             {#each CONNECT_CHANNELS as channel, idx (channel.id)}
-              {#if channel.id === 'cluster'}
-                <button
-                  bind:this={sayHiIconEls[idx]}
-                  type="button"
-                  aria-label="{channel.label} — {channel.handle}"
-                  ontouchstart={(e) => {
-                    hoveredChannelId = channel.id;
-                    const t = e.touches[0];
-                    if (t) emitModalIconBurst?.(t.clientX, t.clientY, 12);
-                  }}
-                  onpointerenter={(e) => {
-                    hoveredChannelId = channel.id;
-                    emitModalIconBurst?.(e.clientX, e.clientY, 12);
-                  }}
-                  onpointerleave={() => {
-                    if (hoveredChannelId === channel.id) hoveredChannelId = null;
-                  }}
-                  onfocus={() => {
-                    hoveredChannelId = channel.id;
-                  }}
-                  onblur={() => {
-                    if (hoveredChannelId === channel.id) hoveredChannelId = null;
-                  }}
-                  onclick={openClusterTopology}
-                  class="group relative flex h-12 w-12 cursor-pointer items-center justify-center rounded-2xl border border-[#FF261B]/45 bg-[#0A0A0C] text-white shadow-[0_14px_34px_rgba(0,0,0,0.6)] transition-[transform,border-color,background-color,color] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:border-[#FF261B] hover:bg-[#FF261B] hover:text-white active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-white sm:h-[56px] sm:w-[56px]"
-                  style="opacity: 0;"
-                >
-                  <!-- 3D Cluster Network Node Icon -->
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    class="h-[22px] w-[22px] transition-transform duration-200 group-hover:scale-110"
-                    aria-hidden="true"
-                  >
-                    <circle cx="12" cy="12" r="2.4" fill="currentColor" />
-                    <circle cx="5" cy="6" r="1.8" />
-                    <circle cx="19" cy="6" r="1.8" />
-                    <circle cx="5" cy="18" r="1.8" />
-                    <circle cx="19" cy="18" r="1.8" />
-                    <path d="M6.6 7.3L10.2 10.4M17.4 7.3L13.8 10.4M6.6 16.7L10.2 13.6M17.4 16.7L13.8 13.6" />
-                  </svg>
-                </button>
-              {:else}
-                <a
-                  bind:this={sayHiIconEls[idx]}
-                  href={channel.href}
-                  target={channel.external ? '_blank' : undefined}
-                  rel={channel.external ? 'noopener noreferrer' : undefined}
-                  download={channel.download}
-                  aria-label="{channel.label} — {channel.handle}"
+              <a
+                bind:this={sayHiIconEls[idx]}
+                href={channel.href}
+                target={channel.external ? '_blank' : undefined}
+                rel={channel.external ? 'noopener noreferrer' : undefined}
+                download={channel.download}
+                aria-label="{channel.label} — {channel.handle}"
                   ontouchstart={(e) => {
                     hoveredChannelId = channel.id;
                     const t = e.touches[0];
@@ -1564,7 +1501,6 @@
                     </svg>
                   {/if}
                 </a>
-              {/if}
             {/each}
           </div>
 
@@ -1584,22 +1520,6 @@
           </div>
         </div>
       </div>
-    </div>
-  {/if}
-
-  <!-- ====================================================================== -->
-  <!-- INTERACTIVE THREE.JS 3D CLUSTER TOPOLOGY NETWORK OVERLAY               -->
-  <!-- Rotate 360°, zoom freely, and click any compute node to fly-to inspect -->
-  <!-- ====================================================================== -->
-  {#if clusterModalOpen}
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="3D Cluster Topology Network"
-      onpointerdown={(e) => e.stopPropagation()}
-      class="fixed inset-0 z-50 h-screen h-[100dvh] w-screen bg-[#050505]"
-    >
-      <ClusterTopologyNetwork onClose={() => (clusterModalOpen = false)} />
     </div>
   {/if}
 </div>
