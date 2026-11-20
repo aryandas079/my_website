@@ -1,0 +1,40 @@
+---
+title: "Smart Grid Load Forecasting with Python & Scikit-Learn"
+facility: "Electrical Engineering & ML · NIT Silchar"
+publishedAt: "2026-10-18"
+readTime: "6 min read"
+impactMetric: "3.42% MAPE across 24-hour feeder demand predictions"
+summary: "Combining Electrical Engineering power-system harmonics with Scikit-Learn gradient boosting and SciPy signal filtering to predict substation peak loads."
+coverImage: "/src/assets/images/case_nordic_hydro_1794969887897.jpg"
+coverAlt: "Hydroelectric power station and electrical engineering infrastructure"
+featuredOrder: 1
+regionId: "nordic-01"
+metrics:
+  - label: "Forecast Error (MAPE)"
+    value: "3.42%"
+    delta: "-2.8% vs ARIMA baseline"
+  - label: "Feature Pipeline"
+    value: "NumPy + Pandas"
+    delta: "144k time-series rows"
+  - label: "Inference Latency"
+    value: "14 ms"
+    delta: "Vectorized SciPy FFT"
+---
+
+## Problem Statement & Electrical Context
+
+Distribution feeders experience sharp nonlinear demand spikes driven by ambient temperature shifts and industrial switching loads. As part of my Electrical Engineering & Machine Learning exploration at **NIT Silchar**, this project models 15-minute interval active power (`kW`) and reactive power (`kVAr`) telemetry to forecast 24-hour peak load windows.
+
+Using `SciPy` Fast Fourier Transform (FFT) spectral decomposition alongside `Pandas` rolling window statistics, noisy meter transients are filtered before training a `Scikit-Learn` ensemble regressor.
+
+## Feature Engineering Pipeline
+
+| Stage | Library Stack | Dimensionality | Computation Time |
+| :--- | :--- | :--- | :--- |
+| Harmonic Filtering | `NumPy` · `SciPy` | 32 spectral bins | 3.8 ms |
+| Lag & Rolling Matrix | `Pandas` | 48 temporal features | 5.1 ms |
+| Ensemble Regression | `Scikit-Learn` | 500 estimators | 5.2 ms |
+
+## Key Engineering Takeaways
+
+Visualizing residual distributions in `Matplotlib` and `Seaborn` revealed that reactive power factor drift precedes afternoon transformer thermal peaks by 45 minutes, enabling proactive tap-changer scheduling.

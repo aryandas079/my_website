@@ -1,6 +1,6 @@
 {
-  "name": "Aryan Das — Personal Portfolio & Landing Page",
-  "description": "Clean minimalist personal landing page and portfolio for Aryan Das, featuring Inter typography, selected works, engineering practice, and a detailed architectural footer.",
+  "name": "Meridian Grid — Spatial Infrastructure Console",
+  "description": "Interactive 3D cluster topology, live compute-rack telemetry ledger, throughput analytics, and MDX engineering case studies built with Astro v5, Svelte 5, Three.js, GSAP, and Tailwind CSS v4.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

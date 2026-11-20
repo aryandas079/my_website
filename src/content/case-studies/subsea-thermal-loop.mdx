@@ -1,0 +1,40 @@
+---
+title: "High-Throughput Graph & Pathfinding Engine in Modern C++"
+facility: "Data Structures & Algorithms · C++20"
+publishedAt: "2026-09-24"
+readTime: "5 min read"
+impactMetric: "4.6x faster shortest-path queries on 1M-edge sparse graphs"
+summary: "Implementing cache-friendly compressed sparse row (CSR) graphs, bidirectional A*, and custom binary heaps in C++ with zero dynamic allocation during search."
+coverImage: "/src/assets/images/case_subsea_thermal_1794969890041.jpg"
+coverAlt: "Precision industrial manifold network representing graph routing topology"
+featuredOrder: 2
+regionId: "pacific-04"
+metrics:
+  - label: "Query Speedup"
+    value: "4.6x"
+    delta: "vs pointer-based adjacency"
+  - label: "Memory Footprint"
+    value: "-58%"
+    delta: "Contiguous CSR layout"
+  - label: "DSA Benchmarks"
+    value: "340+ Solved"
+    delta: "C++ STL & custom allocators"
+---
+
+## Algorithmic Architecture
+
+Pointer-heavy adjacency lists (`std::vector<std::list<Edge>>`) suffer from severe L1/L2 CPU cache misses when traversing large sparse networks. While deepening my focus on **Data Structures & Algorithms in C++**, I engineered a contiguous Compressed Sparse Row (CSR) graph engine paired with an indexed d-ary heap priority queue.
+
+By storing edge weights and target vertex indices in flat, cache-aligned `std::vector` buffers, graph relaxations execute with deterministic memory locality.
+
+## Benchmark Comparison (1,000,000 Directed Edges)
+
+| Algorithm Variant | Data Structure | Mean Query Time | Peak Heap Memory |
+| :--- | :--- | :--- | :--- |
+| Standard Dijkstra | `std::priority_queue` | 48.2 ms | 64.0 MB |
+| CSR + 4-ary Heap | Flat contiguous arrays | 14.9 ms | 26.8 MB |
+| Bidirectional A* | CSR + Euclidean heuristic | 10.4 ms | 26.8 MB |
+
+## Applications to Full-Stack Systems
+
+The C++ routing kernel is exposed to a `Node.js` and `TypeScript` visualization frontend via structured JSON streams, allowing real-time inspection of frontier expansion across complex network topologies.

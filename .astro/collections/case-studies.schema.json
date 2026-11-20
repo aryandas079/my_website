@@ -1,0 +1,86 @@
+{
+  "$ref": "#/definitions/case-studies",
+  "definitions": {
+    "case-studies": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "facility": {
+          "type": "string"
+        },
+        "publishedAt": {
+          "type": "string"
+        },
+        "readTime": {
+          "type": "string"
+        },
+        "impactMetric": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "coverImage": {
+          "type": "string"
+        },
+        "coverAlt": {
+          "type": "string"
+        },
+        "featuredOrder": {
+          "type": "number"
+        },
+        "regionId": {
+          "type": "string",
+          "enum": [
+            "nordic-01",
+            "pacific-04",
+            "alpine-02"
+          ]
+        },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              },
+              "delta": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "label",
+              "value",
+              "delta"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "$schema": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "facility",
+        "publishedAt",
+        "readTime",
+        "impactMetric",
+        "summary",
+        "coverImage",
+        "coverAlt",
+        "featuredOrder",
+        "regionId",
+        "metrics"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}
