@@ -505,10 +505,10 @@ export class InstancedBinaryDustRenderer {
     this.batch.push2D(x, y, size, glyph, r, g, b, alpha, rotRad);
   }
 
-  public render(): void {
+  public render(forceSceneRender = false): void {
     if (this.disposed) return;
     this.batch.commitFrame();
-    if (this.batch.count === 0) {
+    if (this.batch.count === 0 && !forceSceneRender) {
       if (this.hasRenderedInk) {
         this.renderer.clear();
         this.hasRenderedInk = false;

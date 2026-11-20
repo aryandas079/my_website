@@ -14,6 +14,12 @@
   --muted-dull: #8e8e86;
   --ink-dull: #181816;
   --bright-accent: #ff261b;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --tv-overscan-x: 0px;
+  --tv-overscan-y: 0px;
 }
 
 :root[data-surface="obsidian"] {
@@ -25,6 +31,30 @@
   --bright-accent: #ff261b;
 }
 
+/* 4K / Living Room TV 10-foot legibility & safe overscan margins */
+@media (min-width: 2200px) and (min-height: 1100px) {
+  :root {
+    font-size: 18px;
+    --tv-overscan-x: 2.5vw;
+    --tv-overscan-y: 2.2vh;
+  }
+}
+
+@media (min-width: 3200px) and (min-height: 1600px) {
+  :root {
+    font-size: 21px;
+    --tv-overscan-x: 3vw;
+    --tv-overscan-y: 2.5vh;
+  }
+}
+
+/* Ultra-narrow foldable cover screens (e.g. Galaxy Z Fold outer cover ~280px–350px) */
+@media (max-width: 360px) {
+  :root {
+    font-size: 14.5px;
+  }
+}
+
 @layer base {
   html,
   body {
@@ -34,6 +64,8 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: clip;
+    -webkit-tap-highlight-color: transparent;
+    text-size-adjust: 100%;
   }
 
   h1, h2, h3, .font-display {
@@ -47,6 +79,29 @@
   ::selection {
     background-color: var(--bright-accent);
     color: var(--bg-dull);
+  }
+
+  /* High-contrast TV D-pad, car rotary controller & keyboard focus indicator */
+  :focus-visible {
+    outline: 2.5px solid var(--bright-accent);
+    outline-offset: 3px;
+  }
+}
+
+/* Dynamic full-viewport height that never clips behind mobile/car browser toolbars */
+.stage-viewport {
+  height: 100vh;
+  height: 100dvh;
+  padding-top: max(var(--safe-top), var(--tv-overscan-y));
+  padding-right: max(var(--safe-right), var(--tv-overscan-x));
+  padding-bottom: max(var(--safe-bottom), var(--tv-overscan-y));
+  padding-left: max(var(--safe-left), var(--tv-overscan-x));
+}
+
+/* Foldable Dual-Screen Hinge Awareness (keeps 2-column content clear of center fold crease) */
+@media (horizontal-viewport-segments: 2) {
+  .fold-split-grid {
+    column-gap: max(2rem, calc(env(viewport-segment-left 1 0) - env(viewport-segment-right 0 0) + 1.5rem));
   }
 }
 

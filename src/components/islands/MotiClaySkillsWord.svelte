@@ -35,7 +35,7 @@
 >
   <svg
     viewBox="0 0 560 440"
-    class="h-auto w-[240px] sm:w-[390px] md:w-[480px] drop-shadow-[0_24px_38px_rgba(0,0,0,0.22)]"
+    class="h-auto w-[min(72vw,58dvh,560px)] drop-shadow-[0_24px_38px_rgba(0,0,0,0.22)]"
     aria-label="SKILLS in 3D sculpted black clay typography"
   >
     <defs>

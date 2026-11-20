@@ -115,8 +115,8 @@
 
     const measure = () => {
       if (!buttonEl) return;
-      btnW = Math.max(compact ? 96 : 120, Math.round(buttonEl.offsetWidth));
-      btnH = Math.max(compact ? 38 : 44, Math.round(buttonEl.offsetHeight));
+      btnW = Math.max(compact ? 78 : 120, Math.round(buttonEl.offsetWidth));
+      btnH = Math.max(compact ? 36 : 44, Math.round(buttonEl.offsetHeight));
     };
 
     measure();
@@ -482,8 +482,8 @@
     onpointermove={handlePointerMove}
     onpointerleave={handlePointerLeave}
     onclick={onclick}
-    class="relative z-10 inline-flex cursor-pointer items-center justify-center rounded-full font-display font-semibold tracking-[-0.01em] text-[#f5f5f2] {compact
-      ? 'h-[40px] min-w-[106px] px-5 text-[13.5px]'
+    class="relative z-10 inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap rounded-full font-display font-semibold tracking-[-0.01em] text-[#f5f5f2] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#ff261b] {compact
+      ? 'h-[38px] min-w-[82px] px-3.5 text-[12.5px] min-[380px]:h-[40px] min-[380px]:min-w-[92px] min-[380px]:px-4 min-[380px]:text-[13px]'
       : 'h-[48px] min-w-[132px] px-7 text-[15px]'}"
   >
     <span class="relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">

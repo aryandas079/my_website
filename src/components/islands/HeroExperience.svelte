@@ -1,10 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import gsap from 'gsap';
-  import {
-    Big3DCursorController,
-    type HoverRectInfo,
-  } from '../../lib/three/Big3DCursor';
+  import { Big3DCursorController } from '../../lib/three/Big3DCursor';
   import {
     INITIAL_GITHUB_PINS,
     areGithubPinsEqual,
@@ -218,28 +215,65 @@
   let smoothScrollY = $state(0);
   let viewportH = $state(800);
   let viewportW = $state(1280);
-  let isCoarsePointer = $state(false);
-  let showDesktopCursorOverlay = $derived(!(isCoarsePointer && viewportW < 768));
+  let isCarOrShortLandscape = $derived(viewportH <= 580 && viewportW >= 680);
+  let isNarrowMobile = $derived(viewportW < 400);
+  let isTvScreen = $derived(viewportW >= 2200 && viewportH >= 1100);
+  let sayHiModalOpen = $state(false);
+  let isModalOverlayOpen = $derived(focusedCardIdx !== null || sayHiModalOpen);
   let desktopCursorMargin = $derived(
-    viewportW >= 1280 ? 1.0 : viewportW >= 1024 ? 0.62 : 0
+    isCarOrShortLandscape
+      ? 0.22
+      : isTvScreen
+        ? 1.15
+        : viewportW >= 1280
+          ? 1.0
+          : viewportW >= 1024
+            ? 0.62
+            : 0
   );
 
   // Dynamic responsive 3D Projects carousel & Skills drum geometry
-  let projectCardW = $derived(Math.min(335, Math.max(226, viewportW - 56)));
+  let projectCardW = $derived(
+    isCarOrShortLandscape
+      ? Math.min(285, Math.max(200, Math.round(viewportH * 0.48)))
+      : isTvScreen
+        ? Math.min(430, Math.round(viewportW * 0.14))
+        : Math.min(340, Math.max(208, viewportW - 48))
+  );
   let projectCardH = $derived(
-    Math.min(
-      430,
-      Math.max(285, Math.round(Math.min(viewportH * 0.48, projectCardW * 1.28)))
-    )
+    isCarOrShortLandscape
+      ? Math.min(250, Math.max(175, Math.round(viewportH * 0.46)))
+      : isTvScreen
+        ? Math.min(540, Math.round(viewportH * 0.46))
+        : Math.min(
+            435,
+            Math.max(235, Math.round(Math.min(viewportH * 0.46, projectCardW * 1.26)))
+          )
   );
   let cardSpreadX = $derived(
-    Math.max(210, Math.min(340, Math.round(viewportW * 0.42)))
+    isCarOrShortLandscape
+      ? Math.max(180, Math.min(290, Math.round(viewportW * 0.28)))
+      : isTvScreen
+        ? Math.min(450, Math.round(viewportW * 0.16))
+        : Math.max(185, Math.min(340, Math.round(viewportW * 0.42)))
   );
-  let cardSpreadZ = $derived(viewportW < 640 ? 150 : 195);
+  let cardSpreadZ = $derived(
+    isTvScreen ? 235 : viewportW < 640 || isCarOrShortLandscape ? 135 : 195
+  );
   let drumHeight = $derived(
-    Math.min(385, Math.max(210, Math.round(viewportH * 0.36)))
+    isCarOrShortLandscape
+      ? Math.min(235, Math.max(155, Math.round(viewportH * 0.45)))
+      : isTvScreen
+        ? Math.min(500, Math.round(viewportH * 0.42))
+        : Math.min(385, Math.max(175, Math.round(viewportH * 0.34)))
   );
-  let drumStepY = $derived(viewportW < 640 || viewportH < 760 ? 40 : 52);
+  let drumStepY = $derived(
+    isTvScreen
+      ? 64
+      : isCarOrShortLandscape || viewportW < 640 || viewportH < 720
+        ? 36
+        : 52
+  );
 
   // 1. Scroll progress from Page 1 (Hero: 0vh) to Page 2 (About locked at 100vh)
   let dustMorphProgress = $derived(
@@ -266,7 +300,7 @@
     Math.max(0, Math.min(1, (smoothScrollY - viewportH * 15.05) / (viewportH * 1.05)))
   );
 
-  // 8. Scroll progress from Page 5 ("credentials") to Page 6 ("Thank you" finale: 1745vh -> 1845vh)
+  // 8. Scroll progress from Page 5 ("credentials") to Page 6 ("AD" Connect finale: 1745vh -> 1845vh)
   let thankYouMorphProgress = $derived(
     Math.max(0, Math.min(1, (smoothScrollY - viewportH * 17.45) / (viewportH * 1.0)))
   );
@@ -289,7 +323,7 @@
       Math.max(0, 1 - credentialsMorphProgress * 2.5)
   );
 
-  // Opacity of solid "credentials" title at top-left of Page 5 (crystallizes from skills dust, dissolves into Thank you dust)
+  // Opacity of solid "credentials" title at top-left of Page 5 (crystallizes from skills dust, dissolves into AD dust)
   let credentialsTitleSolidOpacity = $derived(
     Math.max(0, Math.min(1, (credentialsMorphProgress - 0.65) / 0.32)) *
       Math.max(0, 1 - thankYouMorphProgress * 2.4)
@@ -381,9 +415,9 @@
 
   // Index (0..4) of the headline currently pointed at while scrolling through the pinned About screen
   let pointedTopicIdx = $state<number | null>(null);
+  let manualTopicIdx = $state<number | null>(null);
   let showPhotoBio = $state(false);
   let cppTypedChars = $state(0);
-  let isManualClickOverride = false;
 
   function getVisibleCppLines(charCount: number): VisibleCppLine[] {
     let remaining = Math.max(0, Math.floor(charCount));
@@ -446,6 +480,7 @@
   let skillsAnchorEl = $state<HTMLElement | null>(null);
   let credentialsAnchorEl = $state<HTMLElement | null>(null);
   let thankYouAnchorEl = $state<HTMLElement | null>(null);
+  let connectButtonEl = $state<HTMLElement | null>(null);
   let aboutSectionEl = $state<HTMLElement | null>(null);
   let nextSectionEl = $state<HTMLElement | null>(null);
   let skillsSectionEl = $state<HTMLElement | null>(null);
@@ -461,6 +496,10 @@
   let credentialsStageEl = $state<HTMLElement | null>(null);
   let cursorController: Big3DCursorController | null = null;
   let topicEls = $state<Array<HTMLElement | null>>([null, null, null, null, null]);
+
+  $effect(() => {
+    cursorController?.setPaused(isModalOverlayOpen);
+  });
 
   function animateHomeScreenReveal(): void {
     gsap.fromTo(
@@ -491,174 +530,43 @@
     cursorController?.setScrollArcProgress(clamped);
   }
 
-  let isLivePointerMode = false;
-  let lastLivePointerX = -9999;
-  let lastLivePointerY = -9999;
-  let scrollAtLiveReleaseY = 0;
-  let cachedHoverEl: HTMLElement | null = null;
-  let cachedHoverRect: HoverRectInfo | null = null;
-
-  const INTERACTIVE_SELECTOR =
-    'a, button, [role="button"], [data-cursor-target], input, select, textarea, summary, .cursor-pointer';
-
-  function resolveInteractiveHover(
-    eventTarget: EventTarget | null,
-    forceMeasure = false
-  ): HoverRectInfo | null {
-    if (!(eventTarget instanceof Element)) {
-      cachedHoverEl = null;
-      cachedHoverRect = null;
-      return null;
-    }
-
-    const match = eventTarget.closest(INTERACTIVE_SELECTOR) as HTMLElement | null;
-    if (!match) {
-      cachedHoverEl = null;
-      cachedHoverRect = null;
-      return null;
-    }
-
-    if (!forceMeasure && match === cachedHoverEl && cachedHoverRect !== null) {
-      return cachedHoverRect;
-    }
-
-    const r = match.getBoundingClientRect();
-    if (r.width <= 0 || r.height <= 0) {
-      cachedHoverEl = null;
-      cachedHoverRect = null;
-      return null;
-    }
-
-    // Ignore fullscreen backdrops or giant containers so cursor glides freely inside them
-    if (r.width > viewportW * 0.72 && r.height > viewportH * 0.72) {
-      cachedHoverEl = null;
-      cachedHoverRect = null;
-      return null;
-    }
-
-    let kind: HoverRectInfo['kind'] | null = null;
-    if (r.width <= 96 && r.height <= 96) {
-      kind = 'icon';
-    } else if (r.width <= 420 && r.height <= 120) {
-      kind = 'button';
-    } else if (r.width <= 480 && r.height <= 500) {
-      kind = 'card';
-    }
-
-    if (!kind) {
-      cachedHoverEl = null;
-      cachedHoverRect = null;
-      return null;
-    }
-
-    cachedHoverEl = match;
-    cachedHoverRect = {
-      left: r.left,
-      top: r.top,
-      width: r.width,
-      height: r.height,
-      kind,
-    };
-    return cachedHoverRect;
-  }
-
-  function handleWindowPointerMove(e: PointerEvent): void {
-    if (e.pointerType === 'touch' || !cursorController) return;
-
-    const dx = e.clientX - lastLivePointerX;
-    const dy = e.clientY - lastLivePointerY;
-    // Ignore tiny sub-2px sensor noise while auto-choreography is running,
-    // but immediately engage ultra-smooth live follow on any real pointer movement
-    if (!isLivePointerMode && Math.hypot(dx, dy) < 2.5) {
-      lastLivePointerX = e.clientX;
-      lastLivePointerY = e.clientY;
-      return;
-    }
-
-    lastLivePointerX = e.clientX;
-    lastLivePointerY = e.clientY;
-    isLivePointerMode = true;
-    scrollAtLiveReleaseY = window.scrollY;
-
-    const hoverRect = resolveInteractiveHover(e.target);
-    cursorController.followPointer({
-      clientX: e.clientX,
-      clientY: e.clientY,
-      hoverRect,
-    });
-  }
-
-  function handleDocumentPointerLeave(): void {
-    if (!isLivePointerMode) return;
-    isLivePointerMode = false;
-    cachedHoverEl = null;
-    cachedHoverRect = null;
-    cursorController?.resumeAutoMode();
-  }
-
-  function handleWindowPointerDown(e: PointerEvent): void {
-    isManualClickOverride = true;
-    if (isLivePointerMode && e.pointerType !== 'touch') {
-      cursorController?.pulseClick(e.clientX, e.clientY);
-    } else {
-      cursorController?.pointAndMoveToClick(e.clientX, e.clientY);
-    }
-  }
-
   function handleNavClick(id: NavTabId, e: MouseEvent): void {
     e.stopPropagation();
     activeTab = activeTab === id ? null : id;
 
     if (id === 'about' && aboutSectionEl) {
-      isManualClickOverride = false;
+      manualTopicIdx = null;
       window.scrollTo({ top: viewportH * 0.98, behavior: 'smooth' });
       return;
     }
 
     if (id === 'projects' && nextSectionEl) {
-      isManualClickOverride = false;
       window.scrollTo({ top: viewportH * 5.28, behavior: 'smooth' });
       return;
     }
 
     if (id === 'skills' && skillsSectionEl) {
-      isManualClickOverride = false;
       window.scrollTo({ top: viewportH * 10.95, behavior: 'smooth' });
       return;
     }
 
     if (id === 'certifications' && credentialsSectionEl) {
-      isManualClickOverride = false;
       window.scrollTo({ top: viewportH * 16.24, behavior: 'smooth' });
       return;
     }
 
     if (id === 'connect' && connectSectionEl) {
-      isManualClickOverride = false;
-      const bottomScroll = Math.max(
-        viewportH * 18.6,
-        document.documentElement.scrollHeight - viewportH
+      const connectEntryScroll = Math.min(
+        Math.round(viewportH * 18.62),
+        Math.max(0, document.documentElement.scrollHeight - viewportH)
       );
-      window.scrollTo({ top: bottomScroll, behavior: 'smooth' });
+      window.scrollTo({ top: connectEntryScroll, behavior: 'smooth' });
       return;
-    }
-
-    isManualClickOverride = true;
-    const targetEl = e.currentTarget as HTMLElement | null;
-    if (targetEl) {
-      const rect = targetEl.getBoundingClientRect();
-      cursorController?.pointAndMoveToClick(
-        rect.left + rect.width / 2,
-        rect.top + rect.height * 0.78
-      );
-    } else {
-      cursorController?.pointAndMoveToClick(e.clientX, e.clientY);
     }
   }
 
-  function handleNeuralNodeInteract(clientX: number, clientY: number): void {
-    isManualClickOverride = true;
-    cursorController?.pointAndMoveToClick(clientX, clientY);
+  function handleNeuralNodeInteract(_clientX: number, _clientY: number): void {
+    // 3D cursor remains locked to heading choreography rather than chasing pointer taps
   }
 
   function selectSkillFromDrum(idx: number, e: MouseEvent): void {
@@ -669,22 +577,6 @@
     const clickedSkill = TECH_STACK_SKILLS[clampedIdx] ?? null;
     selectedTechSkill =
       selectedTechSkill?.id === clickedSkill?.id ? null : clickedSkill;
-    isManualClickOverride = true;
-    const btnEl = e.currentTarget as HTMLElement | null;
-    if (btnEl) {
-      const r = btnEl.getBoundingClientRect();
-      cursorController?.pointAtScreenElement(r.left - 10, r.top + r.height * 0.5, {
-        targetKey: `skill-click-${clampedIdx}-${performance.now()}`,
-        preferredAngleRad: -0.04,
-        fallbackClientX: r.right + 14,
-        fallbackClientY: r.top + r.height * 0.5,
-        scale: 0.6,
-        allowFullRoll: true,
-        forceSwoop: true,
-      });
-    } else {
-      cursorController?.pointAndMoveToClick(e.clientX, e.clientY);
-    }
   }
 
   function handleOpenGithubStats(e: MouseEvent): void {
@@ -692,23 +584,6 @@
     selectedTechSkill = null;
     githubStatsOpen = true;
     githubStatsTriggerToken += 1;
-    isManualClickOverride = true;
-    if (skillsArtEl) {
-      const r = skillsArtEl.getBoundingClientRect();
-      cursorController?.pointAtScreenElement(
-        r.left - 12,
-        r.top + r.height * 0.5,
-        {
-          targetKey: `github-stats-open-${githubStatsTriggerToken}`,
-          preferredAngleRad: -0.04,
-          scale: 0.62,
-          allowFullRoll: true,
-          forceSwoop: true,
-        }
-      );
-    } else {
-      cursorController?.pointAndMoveToClick(e.clientX, e.clientY);
-    }
   }
 
   let readmeSlideAnimated = false;
@@ -756,8 +631,6 @@
     focusedCardIdx = idx;
     focusScrollTop = 0;
     readmeSlideAnimated = false;
-    isManualClickOverride = true;
-    cursorController?.pointAndMoveToClick(e.clientX, e.clientY);
 
     const pin = githubPins[idx];
     if (pin) {
@@ -894,20 +767,16 @@
   }
 
   onMount(() => {
-    viewportH = Math.max(window.innerHeight, 400);
-    viewportW = Math.max(window.innerWidth, 320);
-    const coarseMq = window.matchMedia('(pointer: coarse)');
-    isCoarsePointer = coarseMq.matches;
-    const onCoarseChange = (ev: MediaQueryListEvent) => {
-      isCoarsePointer = ev.matches;
-    };
-    coarseMq.addEventListener?.('change', onCoarseChange);
+    viewportH = Math.max(window.innerHeight, 240);
+    viewportW = Math.max(window.innerWidth, 260);
 
     targetScrollY = window.scrollY;
     smoothScrollY = targetScrollY;
 
-    if (cursorCanvasMount && (!isCoarsePointer || viewportW >= 768)) {
+    // Mount physics-driven 3D cursor across mobile, tablet, and desktop viewports
+    if (cursorCanvasMount) {
       cursorController = new Big3DCursorController(cursorCanvasMount);
+      cursorController.setPaused(isModalOverlayOpen);
     }
 
     requestAnimationFrame(() => {
@@ -955,6 +824,71 @@
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && focusedCardIdx !== null) {
         closeCardFocusView();
+        return;
+      }
+
+      if (isModalOverlayOpen) return;
+      const targetTag = (e.target as HTMLElement | null)?.tagName;
+      if (targetTag === 'INPUT' || targetTag === 'TEXTAREA') return;
+
+      const vh = Math.max(window.innerHeight, 240);
+      const maxScroll = Math.max(0, document.documentElement.scrollHeight - vh);
+      const sectionStops = [
+        0,
+        Math.round(vh * 0.98),
+        Math.round(vh * 5.28),
+        Math.round(vh * 10.95),
+        Math.round(vh * 16.24),
+        Math.min(Math.round(vh * 18.62), maxScroll),
+      ];
+
+      // TV Remote / Keyboard PageDown & PageUp jump cleanly between full sections
+      if (e.key === 'PageDown' || e.key === 'PageUp') {
+        e.preventDefault();
+        const curY = window.scrollY;
+        if (e.key === 'PageDown') {
+          const next = sectionStops.find((s) => s > curY + vh * 0.25);
+          if (next !== undefined) {
+            window.scrollTo({ top: next, behavior: 'smooth' });
+          }
+        } else {
+          for (let i = sectionStops.length - 1; i >= 0; i--) {
+            if (sectionStops[i] < curY - vh * 0.25) {
+              window.scrollTo({ top: sectionStops[i], behavior: 'smooth' });
+              break;
+            }
+          }
+        }
+        return;
+      }
+
+      if (e.key === 'Home') {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      if (e.key === 'End') {
+        e.preventDefault();
+        window.scrollTo({ top: maxScroll, behavior: 'smooth' });
+        return;
+      }
+
+      // TV D-pad / Keyboard ArrowLeft & ArrowRight step Projects carousel or Skills drum
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        const delta = e.key === 'ArrowRight' ? 1 : -1;
+        if (smoothScrollY >= vh * 4.75 && smoothScrollY < vh * 10.55) {
+          e.preventDefault();
+          const cur = Math.round(smoothCardIndex);
+          manualCardIndex = Math.max(0, Math.min(githubPins.length - 1, cur + delta));
+        } else if (smoothScrollY >= vh * 10.35 && smoothScrollY < vh * 15.75) {
+          e.preventDefault();
+          const cur = Math.round(smoothSkillIndex);
+          manualSkillIndex = Math.max(
+            0,
+            Math.min(TECH_STACK_SKILLS.length - 1, cur + delta)
+          );
+        }
       }
     };
 
@@ -964,10 +898,84 @@
     let lastProjectsStage = '';
     let lastSkillsStage = '';
     let lastCredentialsStage = '';
+    let lastThankYouStage = '';
     let snapTimer = 0;
+    let finaleResumeRoamTimer = 0;
     let isTouchActive = false;
+    let isClickPointOverride = false;
     let lastRawScrollY = window.scrollY;
     let scrollDirection: 'down' | 'up' = 'down';
+
+    /**
+     * Finds the nearest visible page heading within magnetic capture range (<= 115px)
+     * so clicking near any heading snaps the 3D cursor smoothly into a centered GSAP lock!
+     */
+    const findNearbyHeadingForClick = (
+      clientX: number,
+      clientY: number
+    ): { rect: DOMRect; key: string } | null => {
+      const candidates: Array<{ el: HTMLElement | null; key: string; minOpacity?: number }> = [
+        { el: heroAnchorEl, key: 'hero-title' },
+        { el: aboutAnchorEl, key: 'about-title' },
+        { el: projectsAnchorEl, key: 'projects-title' },
+        { el: beyondEl, key: 'projects-beyond' },
+        { el: everyLimitEl, key: 'projects-everylimit' },
+        { el: skillsAnchorEl, key: 'skills-title' },
+        { el: motiSkillsEl, key: 'skills-moti' },
+        { el: skillItemEls[activeSkillDrumIdx] ?? null, key: `skill-drum-${activeSkillDrumIdx}` },
+        { el: credentialsAnchorEl, key: 'credentials-title' },
+        { el: connectButtonEl, key: 'connect-cta' },
+      ];
+      for (let i = 0; i < topicEls.length; i++) {
+        if ((topicBuildProgresses[i] ?? 0) > 0.35) {
+          candidates.push({ el: topicEls[i], key: `about-topic-${i}` });
+        }
+      }
+
+      let best: { rect: DOMRect; key: string } | null = null;
+      let bestDist = 115;
+
+      for (const c of candidates) {
+        if (!c.el) continue;
+        const style = window.getComputedStyle(c.el);
+        if (parseFloat(style.opacity || '1') < 0.25) continue;
+        const r = c.el.getBoundingClientRect();
+        if (r.width < 12 || r.height < 12) continue;
+        if (r.bottom < 0 || r.top > viewportH || r.right < 0 || r.left > viewportW) continue;
+
+        const clampedX = Math.max(r.left, Math.min(r.right, clientX));
+        const clampedY = Math.max(r.top, Math.min(r.bottom, clientY));
+        const dist = Math.hypot(clientX - clampedX, clientY - clampedY);
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = { rect: r, key: c.key };
+        }
+      }
+      return best;
+    };
+
+    /**
+     * Click-anywhere 360-degree arbitrary movement:
+     * Clicking ANY pixel on screen launches the 3D cursor along an arbitrary curved trajectory
+     * with a full 360° spin so its exact sharp apex tip points straight at the clicked pixel
+     * (or magnetically locks onto a nearby heading). Desktop mouse-hover tracking stays OFF.
+     */
+    const handleWindowPointerDown = (e: PointerEvent) => {
+      if (isModalOverlayOpen || !cursorController) return;
+      isClickPointOverride = true;
+      window.clearTimeout(finaleResumeRoamTimer);
+      const nearby = findNearbyHeadingForClick(e.clientX, e.clientY);
+      cursorController.pointAndMoveToPixel(e.clientX, e.clientY, nearby);
+
+      // On the last page, hold at the clicked pixel briefly then resume sweeping all over the page
+      if (smoothScrollY > viewportH * 17.55) {
+        finaleResumeRoamTimer = window.setTimeout(() => {
+          if (!isModalOverlayOpen && smoothScrollY > viewportH * 17.55) {
+            isClickPointOverride = false;
+          }
+        }, 2200);
+      }
+    };
 
     const onWindowTouchStart = () => {
       isTouchActive = true;
@@ -990,7 +998,7 @@
       snapTimer = window.setTimeout(() => {
         if (focusedCardIdx !== null || isTouchActive) return;
         const y = window.scrollY;
-        const vh = Math.max(window.innerHeight, 400);
+        const vh = Math.max(window.innerHeight, 240);
 
         // 1. Transition zone between Home (0vh) and About Entry (0.96vh)
         if (y > 4 && y < vh * 0.94) {
@@ -1064,13 +1072,13 @@
           return;
         }
 
-        // 6. Transition zone between Credentials Exit (17.42vh) and Thank You Finale (18.55vh+)
+        // 6. Transition zone between Credentials Exit (17.42vh) and Connect Finale (18.55vh+)
         if (y > vh * 17.42 && y < vh * 18.55) {
           const snapToThankYou =
             scrollDirection === 'down' ? y >= vh * 17.58 : y >= vh * 18.22;
-          const finaleTarget = Math.max(
+          const finaleTarget = Math.min(
             Math.round(vh * 18.62),
-            document.documentElement.scrollHeight - vh
+            Math.max(0, document.documentElement.scrollHeight - vh)
           );
           window.scrollTo({
             top: snapToThankYou ? finaleTarget : Math.round(vh * 16.4),
@@ -1086,29 +1094,24 @@
       if (Math.abs(currentY - lastRawScrollY) > 1) {
         scrollDirection = currentY >= lastRawScrollY ? 'down' : 'up';
         lastRawScrollY = currentY;
+        // Scrolling immediately resumes magnetic headline choreography
+        isClickPointOverride = false;
       }
       targetScrollY = currentY;
-      viewportH = Math.max(window.innerHeight, 400);
-      isManualClickOverride = false;
+      viewportH = Math.max(window.innerHeight, 240);
+      manualTopicIdx = null;
       manualCardIndex = null;
       manualSkillIndex = null;
-      cachedHoverEl = null;
-      cachedHoverRect = null;
-      if (isLivePointerMode && Math.abs(currentY - scrollAtLiveReleaseY) > 28) {
-        isLivePointerMode = false;
-        cursorController?.resumeAutoMode();
-      }
       scheduleSectionSnap();
     };
 
     const onResize = () => {
-      viewportH = Math.max(window.innerHeight, 400);
-      viewportW = Math.max(window.innerWidth, 320);
+      viewportH = Math.max(window.innerHeight, 240);
+      viewportW = Math.max(window.innerWidth, 260);
       targetScrollY = window.scrollY;
-      cachedHoverEl = null;
-      cachedHoverRect = null;
-      if (!cursorController && cursorCanvasMount && (!isCoarsePointer || viewportW >= 768)) {
+      if (!cursorController && cursorCanvasMount) {
         cursorController = new Big3DCursorController(cursorCanvasMount);
+        cursorController.setPaused(isModalOverlayOpen);
       }
     };
 
@@ -1148,7 +1151,8 @@
         lastProjectsStage = '';
         lastSkillsStage = '';
         lastCredentialsStage = '';
-        if (!isManualClickOverride && !isLivePointerMode) {
+        lastThankYouStage = '';
+        if (!isClickPointOverride) {
           const heroArc = 0.14 + (smoothScrollY / Math.max(viewportH * 0.62, 1)) * 0.72;
           syncArcProgress(heroArc);
         }
@@ -1156,7 +1160,12 @@
         lastProjectsStage = '';
         lastSkillsStage = '';
         lastCredentialsStage = '';
-        if (aboutPinnedProgress < 0.04) {
+        lastThankYouStage = '';
+        if (manualTopicIdx !== null) {
+          if (pointedTopicIdx !== manualTopicIdx) {
+            pointedTopicIdx = manualTopicIdx;
+          }
+        } else if (aboutPinnedProgress < 0.04) {
           if (pointedTopicIdx !== null) pointedTopicIdx = null;
         } else {
           const p = Math.max(
@@ -1176,16 +1185,25 @@
         lastPointedIdx = -1;
         lastSkillsStage = '';
         lastCredentialsStage = '';
+        lastThankYouStage = '';
       } else if (smoothScrollY <= viewportH * 15.45) {
         if (pointedTopicIdx !== null) pointedTopicIdx = null;
         lastPointedIdx = -1;
         lastProjectsStage = '';
         lastCredentialsStage = '';
+        lastThankYouStage = '';
+      } else if (smoothScrollY <= viewportH * 17.55) {
+        if (pointedTopicIdx !== null) pointedTopicIdx = null;
+        lastPointedIdx = -1;
+        lastProjectsStage = '';
+        lastSkillsStage = '';
+        lastThankYouStage = '';
       } else {
         if (pointedTopicIdx !== null) pointedTopicIdx = null;
         lastPointedIdx = -1;
         lastProjectsStage = '';
         lastSkillsStage = '';
+        lastCredentialsStage = '';
       }
 
       // Smoothly advance or reverse each About topic's binary build progress
@@ -1300,246 +1318,218 @@
         cppTypedChars = Math.min(TOTAL_CPP_CHARS, cppTypedChars + dt * 220);
       }
 
-      // 3D Pointer Cursor Choreography on About Page:
-      // 1) Points at red "about" headline on arrival -> 2) Dynamically follows each of the 5 About headlines
-      if (
-        !isManualClickOverride &&
-        !isLivePointerMode &&
-        smoothScrollY >= viewportH * 0.62 &&
-        smoothScrollY <= viewportH * 4.65 &&
-        cursorController
-      ) {
-        if (pointedTopicIdx === null) {
-          if (aboutAnchorEl) {
-            const r = aboutAnchorEl.getBoundingClientRect();
-            if (r.width > 0 && r.height > 0) {
-              lastPointedIdx = -1;
-              cursorController.pointAtScreenElement(
-                r.left - 14,
-                r.top + r.height * 0.54,
-                {
+      // 3D Pointer Cursor Physics + GSAP Magnetic Heading Choreography (active whenever user scrolls)
+      if (!isClickPointOverride && cursorController) {
+        // 1) About Page: "about" heading -> 5 About topic headings
+        if (smoothScrollY >= viewportH * 0.62 && smoothScrollY <= viewportH * 4.65) {
+          if (pointedTopicIdx === null) {
+            if (aboutAnchorEl) {
+              const r = aboutAnchorEl.getBoundingClientRect();
+              if (r.width > 0 && r.height > 0) {
+                lastPointedIdx = -1;
+                cursorController.pointAtHeadingRect(r, {
                   targetKey: 'about-title',
-                  preferredAngleRad: -0.05,
-                  scale: 0.66,
+                  preferredSide: 'left',
+                  fallbackSides: ['bottom', 'top'],
+                  preferredAngleOffsetRad: -0.04,
+                  scale: 0.78,
                   allowFullRoll: true,
-                }
-              );
-            }
-          }
-        } else {
-          const idx = pointedTopicIdx;
-          const targetEl = topicEls[idx];
-          if (targetEl) {
-            const rect = targetEl.getBoundingClientRect();
-            if (rect.width > 0 && rect.height > 0) {
-              const switched = lastPointedIdx !== idx;
-              lastPointedIdx = idx;
-
-              cursorController.pointAtScreenElement(
-                rect.left - 10,
-                rect.top + rect.height * 0.5,
-                {
-                  targetKey: `about-topic-${idx}`,
-                  preferredAngleRad: ABOUT_TOPICS[idx].preferredPointerAngle,
-                  fallbackClientX: rect.right + 14,
-                  fallbackClientY: rect.top + rect.height * 0.5,
-                  scale: 0.62,
-                  allowFullRoll: switched,
-                }
-              );
-            }
-          }
-        }
-      }
-
-      // 3D Pointer Cursor Choreography on Projects Page:
-      // 1) Points at "projects" title -> 2) Points at "Beyond" (approaching from open right so never clipped) ->
-      // 3) Points at "every limit" -> 4) Dynamically tracks the active 3D GitHub Pin card
-      if (
-        !isManualClickOverride &&
-        !isLivePointerMode &&
-        smoothScrollY > viewportH * 4.65 &&
-        smoothScrollY <= viewportH * 10.25 &&
-        cursorController
-      ) {
-        if (projectsPinnedProgress < 0.08) {
-          if (projectsAnchorEl) {
-            const r = projectsAnchorEl.getBoundingClientRect();
-            if (r.width > 0) {
-              lastProjectsStage = 'title';
-              cursorController.pointAtScreenElement(
-                r.left - 14,
-                r.top + r.height * 0.55,
-                {
-                  targetKey: 'projects-title',
-                  preferredAngleRad: -0.06,
-                  scale: 0.66,
-                  allowFullRoll: true,
-                }
-              );
-            }
-          }
-        } else if (projectsPinnedProgress < 0.21) {
-          if (beyondEl) {
-            const r = beyondEl.getBoundingClientRect();
-            if (r.width > 0) {
-              lastProjectsStage = 'beyond';
-              // "Beyond" sits flush on the far left — approach from its wide-open right edge
-              // pointing its marked tip cleanly at "Beyond" while keeping 100% of the cursor on screen
-              cursorController.pointAtScreenElement(
-                r.right + 14,
-                r.top + r.height * 0.54,
-                {
-                  targetKey: 'projects-beyond',
-                  preferredAngleRad: Math.PI + 0.06,
-                  scale: 0.64,
-                  allowFullRoll: true,
-                }
-              );
-            }
-          }
-        } else if (projectsPinnedProgress < 0.36) {
-          if (everyLimitEl) {
-            const r = everyLimitEl.getBoundingClientRect();
-            if (r.width > 0) {
-              lastProjectsStage = 'everylimit';
-              cursorController.pointAtScreenElement(
-                r.left - 14,
-                r.top + r.height * 0.54,
-                {
-                  targetKey: 'projects-everylimit',
-                  preferredAngleRad: -0.05,
-                  scale: 0.64,
-                  allowFullRoll: true,
-                }
-              );
-            }
-          }
-        } else {
-          const activeIdx = Math.round(smoothCardIndex);
-          const cardEl = projectCardEls[activeIdx];
-          if (cardEl) {
-            const r = cardEl.getBoundingClientRect();
-            if (r.width > 0) {
-              const stageKey = `card-${activeIdx}`;
-              const switched = lastProjectsStage !== stageKey;
-              lastProjectsStage = stageKey;
-              cursorController.pointAtScreenElement(
-                r.left - 10,
-                r.top + r.height * 0.52,
-                {
-                  targetKey: `projects-${stageKey}`,
-                  preferredAngleRad: -0.04,
-                  fallbackClientX: r.right + 14,
-                  fallbackClientY: r.top + r.height * 0.52,
-                  scale: 0.62,
-                  allowFullRoll: switched,
-                }
-              );
-            }
-          }
-        }
-      }
-
-      // 3D Pointer Cursor Choreography on Skills Page:
-      // 1) Points at red "skills" title -> 2) Points at 3D Moti "SKI/LLS" ->
-      // 3) Dynamically follows the exact scrolling active skill headline in the drum
-      if (
-        !isManualClickOverride &&
-        !isLivePointerMode &&
-        smoothScrollY > viewportH * 10.25 &&
-        smoothScrollY <= viewportH * 15.45 &&
-        cursorController
-      ) {
-        if (skillsPinnedProgress < 0.09) {
-          if (skillsAnchorEl) {
-            const r = skillsAnchorEl.getBoundingClientRect();
-            if (r.width > 0) {
-              lastSkillsStage = 'skills-title';
-              cursorController.pointAtScreenElement(
-                r.left - 14,
-                r.top + r.height * 0.54,
-                {
-                  targetKey: 'skills-title',
-                  preferredAngleRad: -0.05,
-                  scale: 0.66,
-                  allowFullRoll: true,
-                }
-              );
-            }
-          }
-        } else if (skillsPinnedProgress < 0.22 && selectedTechSkill === null && !githubStatsOpen) {
-          if (motiSkillsEl) {
-            const r = motiSkillsEl.getBoundingClientRect();
-            if (r.width > 0) {
-              lastSkillsStage = 'moti-center';
-              cursorController.pointAtScreenElement(
-                r.left + r.width * 0.24,
-                r.top + r.height * 0.5,
-                {
-                  targetKey: 'skills-moti',
-                  preferredAngleRad: -0.04,
-                  scale: 0.64,
-                  allowFullRoll: true,
-                }
-              );
-            }
-          }
-        } else {
-          const activeSkillEl =
-            skillItemEls[activeSkillDrumIdx] ?? skillDrumCenterEl;
-          if (activeSkillEl) {
-            const r = activeSkillEl.getBoundingClientRect();
-            if (r.width > 0 && r.height > 0) {
-              const stageKey = `skill-drum-${activeSkillDrumIdx}`;
-              const enteredDrumFromTitle = !lastSkillsStage.startsWith('skill-drum-');
-              lastSkillsStage = stageKey;
-              cursorController.pointAtScreenElement(
-                r.left - 10,
-                r.top + r.height * 0.5,
-                {
-                  targetKey: stageKey,
-                  preferredAngleRad: -0.03 + ((activeSkillDrumIdx % 3) - 1) * 0.025,
-                  fallbackClientX: r.right + 14,
-                  fallbackClientY: r.top + r.height * 0.5,
-                  scale: 0.6,
-                  allowFullRoll: enteredDrumFromTitle,
-                  forceSwoop: enteredDrumFromTitle,
-                }
-              );
-            }
-          }
-        }
-      }
-
-      // 3D Pointer Cursor Choreography on Credentials Page:
-      // Smoothly swoops over to point directly at the top-left red "credentials" headline
-      if (
-        !isManualClickOverride &&
-        !isLivePointerMode &&
-        smoothScrollY > viewportH * 15.45 &&
-        smoothScrollY <= viewportH * 17.55 &&
-        cursorController
-      ) {
-        if (credentialsAnchorEl) {
-          const r = credentialsAnchorEl.getBoundingClientRect();
-          if (r.width > 0 && r.height > 0) {
-            const enteredCredentials = lastCredentialsStage !== 'credentials-title';
-            lastCredentialsStage = 'credentials-title';
-            cursorController.pointAtScreenElement(
-              r.right + 18,
-              r.top + r.height * 0.54,
-              {
-                targetKey: 'credentials-title',
-                preferredAngleRad: Math.PI + 0.05,
-                fallbackClientX: r.left + r.width * 0.5,
-                fallbackClientY: r.bottom + 18,
-                scale: 0.64,
-                allowFullRoll: enteredCredentials,
-                forceSwoop: enteredCredentials,
+                });
               }
-            );
+            }
+          } else {
+            const idx = pointedTopicIdx;
+            const targetEl = topicEls[idx];
+            if (targetEl) {
+              const rect = targetEl.getBoundingClientRect();
+              if (rect.width > 0 && rect.height > 0) {
+                const switched = lastPointedIdx !== idx;
+                lastPointedIdx = idx;
+
+                cursorController.pointAtHeadingRect(rect, {
+                  targetKey: `about-topic-${idx}`,
+                  preferredSide: viewportW >= 1024 ? 'left' : 'right',
+                  fallbackSides:
+                    viewportW >= 1024
+                      ? ['right', 'top', 'bottom']
+                      : ['top', 'bottom', 'left'],
+                  preferredAngleOffsetRad: ABOUT_TOPICS[idx].preferredPointerAngle,
+                  scale: 0.76,
+                  allowFullRoll: switched,
+                  forceImpulse: switched,
+                });
+              }
+            }
           }
+        }
+
+        // 2) Projects Page: "projects" -> "Beyond" -> "every limit" -> Active project card
+        if (smoothScrollY > viewportH * 4.65 && smoothScrollY <= viewportH * 10.25) {
+          if (projectsPinnedProgress < 0.08) {
+            if (projectsAnchorEl) {
+              const r = projectsAnchorEl.getBoundingClientRect();
+              if (r.width > 0 && r.height > 0) {
+                const switched = lastProjectsStage !== 'title';
+                lastProjectsStage = 'title';
+                cursorController.pointAtHeadingRect(r, {
+                  targetKey: 'projects-title',
+                  preferredSide: 'left',
+                  fallbackSides: ['bottom', 'top'],
+                  preferredAngleOffsetRad: -0.05,
+                  scale: 0.78,
+                  allowFullRoll: switched,
+                  forceImpulse: switched,
+                });
+              }
+            }
+          } else if (projectsPinnedProgress < 0.21) {
+            if (beyondEl) {
+              const r = beyondEl.getBoundingClientRect();
+              if (r.width > 0 && r.height > 0) {
+                const switched = lastProjectsStage !== 'beyond';
+                lastProjectsStage = 'beyond';
+                cursorController.pointAtHeadingRect(r, {
+                  targetKey: 'projects-beyond',
+                  preferredSide: 'right',
+                  fallbackSides: ['bottom', 'top'],
+                  preferredAngleOffsetRad: 0.05,
+                  scale: 0.78,
+                  allowFullRoll: switched,
+                  forceImpulse: switched,
+                });
+              }
+            }
+          } else if (projectsPinnedProgress < 0.36) {
+            if (everyLimitEl) {
+              const r = everyLimitEl.getBoundingClientRect();
+              if (r.width > 0 && r.height > 0) {
+                const switched = lastProjectsStage !== 'everylimit';
+                lastProjectsStage = 'everylimit';
+                cursorController.pointAtHeadingRect(r, {
+                  targetKey: 'projects-everylimit',
+                  preferredSide: 'left',
+                  fallbackSides: ['top', 'bottom'],
+                  preferredAngleOffsetRad: -0.04,
+                  scale: 0.78,
+                  allowFullRoll: switched,
+                  forceImpulse: switched,
+                });
+              }
+            }
+          } else {
+            const activeIdx = Math.round(smoothCardIndex);
+            const cardEl = projectCardEls[activeIdx];
+            if (cardEl) {
+              const r = cardEl.getBoundingClientRect();
+              if (r.width > 0 && r.height > 0) {
+                const stageKey = `card-${activeIdx}`;
+                const switched = lastProjectsStage !== stageKey;
+                lastProjectsStage = stageKey;
+                cursorController.pointAtHeadingRect(r, {
+                  targetKey: `projects-${stageKey}`,
+                  preferredSide: 'left',
+                  fallbackSides: ['right', 'top', 'bottom'],
+                  preferredAngleOffsetRad: -0.03,
+                  scale: 0.74,
+                  allowFullRoll: switched,
+                  forceImpulse: switched,
+                });
+              }
+            }
+          }
+        }
+
+        // 3) Skills Page: "skills" -> "SKI/LLS" -> Active scrolling skill headline
+        if (smoothScrollY > viewportH * 10.25 && smoothScrollY <= viewportH * 15.45) {
+          if (skillsPinnedProgress < 0.09) {
+            if (skillsAnchorEl) {
+              const r = skillsAnchorEl.getBoundingClientRect();
+              if (r.width > 0 && r.height > 0) {
+                const switched = lastSkillsStage !== 'skills-title';
+                lastSkillsStage = 'skills-title';
+                cursorController.pointAtHeadingRect(r, {
+                  targetKey: 'skills-title',
+                  preferredSide: 'left',
+                  fallbackSides: ['bottom', 'top'],
+                  preferredAngleOffsetRad: -0.04,
+                  scale: 0.78,
+                  allowFullRoll: switched,
+                  forceImpulse: switched,
+                });
+              }
+            }
+          } else if (skillsPinnedProgress < 0.22 && selectedTechSkill === null && !githubStatsOpen) {
+            if (motiSkillsEl) {
+              const r = motiSkillsEl.getBoundingClientRect();
+              if (r.width > 0 && r.height > 0) {
+                const switched = lastSkillsStage !== 'moti-center';
+                lastSkillsStage = 'moti-center';
+                cursorController.pointAtScreenElement(
+                  r.left + r.width * (viewportW < 640 ? 0.5 : 0.24),
+                  r.top + r.height * (viewportW < 640 ? 0.22 : 0.5),
+                  {
+                    targetKey: 'skills-moti',
+                    preferredAngleRad: viewportW < 640 ? -Math.PI * 0.5 + 0.06 : -0.03,
+                    scale: 0.78,
+                    allowFullRoll: switched,
+                    forceSwoop: switched,
+                  }
+                );
+              }
+            }
+          } else {
+            const activeSkillEl =
+              skillItemEls[activeSkillDrumIdx] ?? skillDrumCenterEl;
+            if (activeSkillEl) {
+              const r = activeSkillEl.getBoundingClientRect();
+              if (r.width > 0 && r.height > 0) {
+                const stageKey = `skill-drum-${activeSkillDrumIdx}`;
+                const enteredDrumFromTitle = !lastSkillsStage.startsWith('skill-drum-');
+                lastSkillsStage = stageKey;
+                cursorController.pointAtHeadingRect(r, {
+                  targetKey: stageKey,
+                  preferredSide: viewportW >= 1024 ? 'left' : 'right',
+                  fallbackSides:
+                    viewportW >= 1024
+                      ? ['right', 'top', 'bottom']
+                      : ['top', 'bottom', 'left'],
+                  preferredAngleOffsetRad:
+                    -0.02 + ((activeSkillDrumIdx % 3) - 1) * 0.02,
+                  scale: 0.74,
+                  allowFullRoll: enteredDrumFromTitle,
+                  forceImpulse: enteredDrumFromTitle,
+                });
+              }
+            }
+          }
+        }
+
+        // 4) Credentials Page: "credentials" heading
+        if (smoothScrollY > viewportH * 15.45 && smoothScrollY <= viewportH * 17.55) {
+          if (credentialsAnchorEl) {
+            const r = credentialsAnchorEl.getBoundingClientRect();
+            if (r.width > 0 && r.height > 0) {
+              const enteredCredentials = lastCredentialsStage !== 'credentials-title';
+              lastCredentialsStage = 'credentials-title';
+              cursorController.pointAtHeadingRect(r, {
+                targetKey: 'credentials-title',
+                preferredSide: 'right',
+                fallbackSides: ['bottom', 'top', 'left'],
+                preferredAngleOffsetRad: 0.04,
+                scale: 0.78,
+                allowFullRoll: enteredCredentials,
+                forceImpulse: enteredCredentials,
+              });
+            }
+          }
+        }
+
+        // 5) Connect Finale Page: let the 3D cursor glide freely all over the entire last page
+        if (smoothScrollY > viewportH * 17.55) {
+          lastThankYouStage = 'finale-full-roam';
+          cursorController.setFinaleRoamMode(0.88);
+        } else if (lastThankYouStage !== '') {
+          lastThankYouStage = '';
         }
       }
 
@@ -1550,20 +1540,13 @@
 
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onResize, { passive: true });
-    window.addEventListener('touchstart', onWindowTouchStart, { passive: true });
-    window.addEventListener('touchend', onWindowTouchEnd, { passive: true });
-    window.addEventListener('touchcancel', onWindowTouchEnd, { passive: true });
-    window.addEventListener('pointermove', handleWindowPointerMove, {
-      passive: true,
-      capture: true,
-    });
     window.addEventListener('pointerdown', handleWindowPointerDown, {
       passive: true,
       capture: true,
     });
-    document.addEventListener('pointerleave', handleDocumentPointerLeave, {
-      passive: true,
-    });
+    window.addEventListener('touchstart', onWindowTouchStart, { passive: true });
+    window.addEventListener('touchend', onWindowTouchEnd, { passive: true });
+    window.addEventListener('touchcancel', onWindowTouchEnd, { passive: true });
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('focus', onWindowFocus);
     document.addEventListener('visibilitychange', onVisibilityChange);
@@ -1571,16 +1554,14 @@
     return () => {
       cancelAnimationFrame(rafId);
       window.clearTimeout(snapTimer);
+      window.clearTimeout(finaleResumeRoamTimer);
       window.clearInterval(pinSyncTimer);
-      coarseMq.removeEventListener?.('change', onCoarseChange);
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onResize);
+      window.removeEventListener('pointerdown', handleWindowPointerDown, { capture: true });
       window.removeEventListener('touchstart', onWindowTouchStart);
       window.removeEventListener('touchend', onWindowTouchEnd);
       window.removeEventListener('touchcancel', onWindowTouchEnd);
-      window.removeEventListener('pointermove', handleWindowPointerMove, true);
-      window.removeEventListener('pointerdown', handleWindowPointerDown, true);
-      document.removeEventListener('pointerleave', handleDocumentPointerLeave);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('focus', onWindowFocus);
       document.removeEventListener('visibilitychange', onVisibilityChange);
@@ -1603,7 +1584,7 @@
 <div
   bind:this={cursorCanvasMount}
   aria-hidden="true"
-  class="pointer-events-none fixed inset-0 z-[60] {showDesktopCursorOverlay ? '' : 'hidden'}"
+  class="pointer-events-none fixed inset-0 z-[60] transition-opacity duration-300 {isModalOverlayOpen ? 'opacity-0' : 'opacity-100'}"
 ></div>
 
 <BinaryDustWordMorph
@@ -1642,12 +1623,12 @@
 <!-- ====================================================================== -->
 <section
   id="home-page"
-  class="relative z-10 flex h-screen w-full flex-col justify-end px-4 pb-8 sm:px-8 sm:pb-14"
+  class="stage-viewport relative z-10 flex h-[100dvh] w-full flex-col justify-end px-4 pb-6 sm:px-8 sm:pb-12 lg:pb-14"
 >
   {#if dustMorphProgress < 0.18}
     <header
-      class="pointer-events-none absolute inset-x-0 top-4 z-40 mx-auto flex w-full max-w-[1440px] items-center justify-center px-3 sm:top-6 sm:px-4"
-      style="opacity: {Math.max(0, 1 - dustMorphProgress * 6.0).toFixed(3)}; transform: translate3d(0, -{(dustMorphProgress * 36).toFixed(1)}px, 0);"
+      class="pointer-events-none absolute inset-x-0 z-40 mx-auto flex w-full max-w-[1680px] items-center justify-center px-3 sm:px-6"
+      style="top: max(0.75rem, env(safe-area-inset-top)); opacity: {Math.max(0, 1 - dustMorphProgress * 6.0).toFixed(3)}; transform: translate3d(0, -{(dustMorphProgress * 36).toFixed(1)}px, 0);"
     >
       <nav
         data-build="navbar"
@@ -1656,22 +1637,35 @@
         data-exclude-pad-top="24"
         data-exclude-pad-bottom="96"
         aria-label="Primary navigation"
-        class="pointer-events-auto flex flex-wrap items-center justify-center gap-2 sm:gap-4 lg:gap-5"
+        class="pointer-events-auto flex flex-col items-center justify-center gap-2 sm:flex-row sm:flex-wrap sm:gap-3.5 lg:gap-5"
       >
-        {#each NAV_ITEMS as item (item.id)}
-          <FluidNavButton
-            id={item.id}
-            label={item.label}
-            active={activeTab === item.id}
-            compact={viewportW < 640}
-            onclick={(e) => handleNavClick(item.id, e)}
-          />
-        {/each}
+        <div class="flex items-center justify-center gap-1.5 sm:contents">
+          {#each NAV_ITEMS.slice(0, 3) as item (item.id)}
+            <FluidNavButton
+              id={item.id}
+              label={item.label}
+              active={activeTab === item.id}
+              compact={viewportW < 640 || isCarOrShortLandscape}
+              onclick={(e) => handleNavClick(item.id, e)}
+            />
+          {/each}
+        </div>
+        <div class="flex items-center justify-center gap-1.5 sm:contents">
+          {#each NAV_ITEMS.slice(3) as item (item.id)}
+            <FluidNavButton
+              id={item.id}
+              label={item.label}
+              active={activeTab === item.id}
+              compact={viewportW < 640 || isCarOrShortLandscape}
+              onclick={(e) => handleNavClick(item.id, e)}
+            />
+          {/each}
+        </div>
       </nav>
     </header>
   {/if}
 
-  <div class="mx-auto w-full max-w-[1440px]">
+  <div class="mx-auto w-full max-w-[1680px]">
     <div
       bind:this={heroAnchorEl}
       data-build="hero-name"
@@ -1683,9 +1677,9 @@
       style="opacity: {heroSolidOpacity.toFixed(3)};"
     >
       <h1
-        class="font-display text-[clamp(2.85rem,14.2vw,14rem)] leading-[0.84] font-extrabold tracking-[-0.055em] text-[#ff261b] select-none"
+        class="font-display text-[clamp(2.35rem,min(13vw,24dvh),13.5rem)] leading-[0.84] font-extrabold tracking-[-0.055em] text-[#ff261b] select-none"
       >
-        aryandas
+        Aryan Das
       </h1>
     </div>
   </div>
@@ -1701,8 +1695,8 @@
   bind:this={aboutSectionEl}
   class="relative z-10 h-[440vh] w-full"
 >
-  <div class="sticky top-0 flex h-screen w-full flex-col justify-between overflow-hidden px-4 pt-8 pb-6 sm:px-10 sm:pt-20 sm:pb-10 lg:pt-24">
-    <div class="mx-auto flex h-full w-full max-w-[1440px] flex-col justify-between">
+  <div class="stage-viewport sticky top-0 flex h-[100dvh] w-full flex-col justify-between overflow-hidden px-4 pt-5 pb-4 sm:px-10 sm:pt-14 sm:pb-8 lg:pt-20">
+    <div class="mx-auto flex h-full w-full max-w-[1680px] flex-col justify-between">
       <!-- TOP-RIGHT RED "about" PAGE TITLE (Destination of the 1 & 0 binary dust) -->
       <div class="flex w-full justify-end">
         <div
@@ -1715,7 +1709,7 @@
           style="opacity: {aboutTitleSolidOpacity.toFixed(3)};"
         >
           <h2
-            class="font-display text-[clamp(2.4rem,7.6vw,6.8rem)] leading-[0.86] font-extrabold tracking-[-0.05em] text-[#ff261b] select-none"
+            class="font-display text-[clamp(2rem,min(7.6vw,12dvh),7.2rem)] leading-[0.86] font-extrabold tracking-[-0.05em] text-[#ff261b] select-none"
           >
             about
           </h2>
@@ -1723,49 +1717,50 @@
       </div>
 
       <!-- MAIN ABOUT CONTENT: 5 Points Built from Binary Dust on Left + Portrait Photo on Right -->
-      <div class="my-auto grid w-full grid-cols-1 items-center gap-4 sm:gap-6 lg:grid-cols-12 lg:gap-8">
+      <div
+        class="fold-split-grid my-auto grid w-full items-center {isCarOrShortLandscape
+          ? 'grid-cols-12 gap-4'
+          : 'grid-cols-1 gap-3 sm:gap-5 md:grid-cols-12 lg:gap-8'}"
+      >
         <!-- LEFT / CENTER: Clean Headlines that build one-by-one from background binary rain dust -->
-        <div class="flex flex-col gap-2 sm:gap-3.5 lg:col-span-7">
+        <div
+          class="flex flex-col {isCarOrShortLandscape
+            ? 'col-span-7 gap-1'
+            : 'gap-1.5 sm:gap-3 md:col-span-7'}"
+        >
           {#each ABOUT_TOPICS as topic, idx (topic.id)}
             {@const buildP = topicBuildProgresses[idx] ?? 0}
             {@const isPointed = pointedTopicIdx === idx && buildP > 0.15}
             {@const textOpacity = Math.max(0, Math.min(1, (buildP - 0.34) / 0.52))}
             {@const offsetX = Math.round(topic.baseIndentPx * desktopCursorMargin) + (isPointed ? 8 : 0)}
 
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
             <div
               bind:this={topicEls[idx]}
+              role="button"
+              tabindex="0"
               data-binary-exclude={buildP > 0.72 ? '' : undefined}
               data-exclude-pad-x="16"
               data-exclude-pad-top="6"
               data-exclude-pad-bottom="6"
               onclick={(e) => {
                 e.stopPropagation();
+                manualTopicIdx = idx;
                 pointedTopicIdx = idx;
-                isManualClickOverride = true;
-                const el = e.currentTarget as HTMLElement;
-                const r = el.getBoundingClientRect();
-                cursorController?.pointAtScreenElement(
-                  r.left - 10,
-                  r.top + r.height * 0.5,
-                  {
-                    targetKey: `about-click-${idx}-${performance.now()}`,
-                    preferredAngleRad: ABOUT_TOPICS[idx].preferredPointerAngle,
-                    fallbackClientX: r.right + 14,
-                    fallbackClientY: r.top + r.height * 0.5,
-                    scale: 0.62,
-                    allowFullRoll: true,
-                    forceSwoop: true,
-                  }
-                );
               }}
-              class="relative cursor-pointer self-start rounded-2xl px-3 py-1.5 transition-[transform,background-color,border-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] sm:px-5 sm:py-2.5 lg:px-6 lg:py-3 {isPointed
+              onkeydown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  manualTopicIdx = idx;
+                  pointedTopicIdx = idx;
+                }
+              }}
+              class="relative cursor-pointer self-start rounded-2xl px-3 py-1 transition-[transform,background-color,border-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] sm:px-5 sm:py-2 lg:px-6 lg:py-3 {isPointed
                 ? 'border border-[#181816]/15 bg-[#181816]/[0.055]'
                 : 'border border-transparent bg-transparent'}"
               style="opacity: {textOpacity.toFixed(3)}; transform: translate3d({offsetX}px, 0, 0);"
             >
               <div
-                class="font-display text-[clamp(1.12rem,3.6vw,2.35rem)] leading-[1.12] font-extrabold tracking-[-0.03em] transition-colors duration-300 {isPointed
+                class="font-display text-[clamp(0.98rem,min(3.2vw,4.5dvh),2.45rem)] leading-[1.12] font-extrabold tracking-[-0.03em] transition-colors duration-300 {isPointed
                   ? 'text-[#181816]'
                   : 'text-[#181816]/62'}"
               >
@@ -1777,7 +1772,9 @@
 
         <!-- RIGHT PART OF THE SCREEN: Clickable Aryan Das Portrait Photo + GitHub Dark C++ Live Coding Bio -->
         <div
-          class="flex flex-col items-center justify-center lg:col-span-5 lg:items-end"
+          class="flex flex-col items-center justify-center {isCarOrShortLandscape
+            ? 'col-span-5 items-end'
+            : 'md:col-span-5 md:items-end'}"
           style="opacity: {aboutPhotoOpacity.toFixed(3)}; transform: translate3d(0, {((1 - aboutPhotoOpacity) * 20).toFixed(1)}px, 0);"
         >
           <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -1793,18 +1790,20 @@
               if (showPhotoBio) {
                 cppTypedChars = 0;
               }
-              isManualClickOverride = true;
-              cursorController?.pointAndMoveToClick(e.clientX, e.clientY);
             }}
-            class="group relative flex w-full cursor-pointer flex-col items-center lg:items-end"
+            class="group relative flex w-full cursor-pointer flex-col items-center {isCarOrShortLandscape ? 'items-end' : 'md:items-end'}"
           >
             <div
-              class="relative overflow-hidden rounded-[24px] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] sm:rounded-[28px] {showPhotoBio
-                ? 'w-full max-w-[110px] sm:max-w-[170px]'
-                : 'w-full max-w-[175px] sm:max-w-[260px] lg:max-w-[375px]'}"
+              class="relative overflow-hidden rounded-[22px] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] sm:rounded-[28px] {showPhotoBio
+                ? isCarOrShortLandscape
+                  ? 'w-full max-w-[68px]'
+                  : 'w-full max-w-[74px] sm:max-w-[140px]'
+                : isCarOrShortLandscape
+                  ? 'w-full max-w-[min(210px,38dvh)]'
+                  : 'w-full max-w-[min(170px,42vw)] sm:max-w-[min(250px,34dvh)] md:max-w-[min(320px,46dvh)] lg:max-w-[min(390px,54dvh)]'}"
             >
               <img
-                src={`${import.meta.env.BASE_URL}assets/aistudio/newProfile_ec248e2f.png`}
+                src="/assets/aistudio/newProfile_ec248e2f.png"
                 alt="Aryan Das"
                 class="h-auto w-full object-contain transition-transform duration-500 select-none group-hover:scale-[1.02]"
               />
@@ -1812,34 +1811,34 @@
 
             <div
               class="w-full max-w-[520px] overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] {showPhotoBio
-                ? 'mt-2.5 max-h-[34vh] translate-y-0 opacity-100 sm:mt-3 sm:max-h-[380px]'
+                ? 'mt-2 max-h-[54dvh] translate-y-0 opacity-100 sm:mt-3 sm:max-h-[440px]'
                 : 'mt-0 max-h-0 -translate-y-2 opacity-0 pointer-events-none'}"
             >
-              <!-- GitHub Dark Theme C++ Code Editor Window -->
+              <!-- GitHub Dark Theme C++ Code Editor Window (Fixed, Zero Scrollbars) -->
               <div
                 class="overflow-hidden rounded-xl border border-[#30363d] bg-[#0d1117] text-left shadow-[0_22px_50px_rgba(13,17,23,0.45)]"
               >
                 <!-- GitHub Dark Header / Tab Bar -->
                 <div
-                  class="flex items-center justify-between border-b border-[#30363d] bg-[#161b22] px-3.5 py-2"
+                  class="flex items-center justify-between border-b border-[#30363d] bg-[#161b22] px-3 py-1.5 sm:px-3.5 sm:py-2"
                 >
                   <div class="flex items-center gap-2">
                     <span class="h-2.5 w-2.5 rounded-full bg-[#ff5f56]"></span>
                     <span class="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]"></span>
                     <span class="h-2.5 w-2.5 rounded-full bg-[#27c93f]"></span>
-                    <span class="ml-2 font-mono text-[11px] font-medium tracking-tight text-[#e6edf3]">
+                    <span class="ml-1.5 font-mono text-[10.5px] font-medium tracking-tight text-[#e6edf3] sm:text-[11px]">
                       aryan_das.cpp
                     </span>
                   </div>
                   <div class="flex items-center gap-2">
-                    <span class="font-mono text-[10px] text-[#8b949e]">
+                    <span class="font-mono text-[9.5px] text-[#8b949e] sm:text-[10px]">
                       {cppTypedChars < TOTAL_CPP_CHARS ? 'typing...' : 'C++20 · UTF-8'}
                     </span>
                   </div>
                 </div>
 
-                <!-- GitHub Dark Code Body with Line Numbers & Live C++ Input -->
-                <div class="max-h-[28vh] overflow-x-auto overflow-y-auto px-2.5 py-2.5 font-mono text-[10.5px] leading-[1.5] sm:max-h-[320px] sm:px-3 sm:py-3 sm:text-[12px] sm:leading-[1.55]">
+                <!-- GitHub Dark Code Body (Fixed Wrapping Layout, Zero Vertical or Horizontal Scrollbars) -->
+                <div class="overflow-hidden px-2.5 py-2 font-mono text-[clamp(8.5px,2.15vw,11.5px)] leading-[1.38] sm:px-3 sm:py-2.5 sm:text-[11.5px] sm:leading-[1.48]">
                   {#each visibleCppLines as line (line.lineNumber)}
                     <div
                       class="flex items-baseline rounded px-1 {line.isCursorLine
@@ -1847,17 +1846,17 @@
                         : ''}"
                     >
                       <span
-                        class="mr-3 w-5 shrink-0 text-right text-[10.5px] select-none {line.isCursorLine
+                        class="mr-2 w-4 shrink-0 text-right text-[9.5px] select-none sm:mr-3 sm:w-5 sm:text-[10.5px] {line.isCursorLine
                           ? 'text-[#e6edf3]'
                           : 'text-[#6e7681]'}"
                       >
                         {line.lineNumber}
                       </span>
-                      <span class="whitespace-pre break-normal">
+                      <span class="min-w-0 flex-1 whitespace-pre-wrap break-words">
                         {#each line.tokens as tok, tIdx (tIdx)}
                           <span style="color: {tok.color};">{tok.text}</span>
                         {/each}{#if line.isCursorLine}<span
-                            class="ml-[1px] inline-block h-[13px] w-[6.5px] translate-y-[2px] bg-[#58a6ff] animate-pulse"
+                            class="ml-[1px] inline-block h-[11px] w-[5.5px] translate-y-[2px] bg-[#58a6ff] animate-pulse sm:h-[13px] sm:w-[6.5px]"
                           ></span>{/if}
                       </span>
                     </div>
@@ -1869,7 +1868,7 @@
         </div>
       </div>
 
-      <div class="h-2"></div>
+      <div class="h-1"></div>
     </div>
   </div>
 </section>
@@ -1885,8 +1884,8 @@
   bind:this={nextSectionEl}
   class="relative z-10 h-[560vh] w-full"
 >
-  <div class="sticky top-0 flex h-screen w-full flex-col justify-between overflow-hidden px-4 pt-8 pb-5 sm:px-10 sm:pt-16 sm:pb-8 lg:pt-20 lg:pb-10">
-    <div class="mx-auto flex h-full w-full max-w-[1440px] flex-col justify-between">
+  <div class="stage-viewport sticky top-0 flex h-[100dvh] w-full flex-col justify-between overflow-hidden px-4 pt-5 pb-4 sm:px-10 sm:pt-12 sm:pb-7 lg:pt-16 lg:pb-10">
+    <div class="mx-auto flex h-full w-full max-w-[1680px] flex-col justify-between">
       <!-- TOP ROW: "Beyond" on Far Left Top + Red "projects" Title on Top Right -->
       <div class="flex w-full items-start justify-between gap-4">
         <!-- FAR LEFT TOP: "Beyond" built from binary rain -->
@@ -1900,7 +1899,7 @@
           style="opacity: {Math.max(0, Math.min(1, (beyondBuildProgress - 0.32) / 0.54)).toFixed(3)};"
         >
           <span
-            class="font-display text-[clamp(2.1rem,6.5vw,6.2rem)] leading-[0.88] font-extrabold tracking-[-0.05em] text-[#181816] select-none"
+            class="font-display text-[clamp(1.65rem,min(6.2vw,9.5dvh),6.4rem)] leading-[0.88] font-extrabold tracking-[-0.05em] text-[#181816] select-none"
           >
             Beyond
           </span>
@@ -1917,7 +1916,7 @@
           style="opacity: {projectsTitleSolidOpacity.toFixed(3)};"
         >
           <h2
-            class="font-display text-[clamp(2.4rem,7.6vw,6.8rem)] leading-[0.86] font-extrabold tracking-[-0.05em] text-[#ff261b] select-none"
+            class="font-display text-[clamp(2rem,min(7.4vw,11dvh),7rem)] leading-[0.86] font-extrabold tracking-[-0.05em] text-[#ff261b] select-none"
           >
             projects
           </h2>
@@ -1974,8 +1973,6 @@
                 if (!isCenter) {
                   e.stopPropagation();
                   manualCardIndex = cIdx;
-                  isManualClickOverride = true;
-                  cursorController?.pointAndMoveToClick(e.clientX, e.clientY);
                   return;
                 }
                 openCardFocusView(cIdx, e);
@@ -2045,16 +2042,20 @@
       </div>
 
       <!-- BOTTOM ROW: Centered Ferrofluid "View all projects" Button + "every limit" at Bottom-Right End -->
-      <div class="relative z-20 flex w-full flex-col-reverse items-center justify-between gap-2.5 md:flex-row md:items-end md:gap-4">
+      <div
+        class="relative z-20 flex w-full items-center justify-between gap-2 {isCarOrShortLandscape
+          ? 'flex-row items-end gap-3'
+          : 'flex-col-reverse md:flex-row md:items-end md:gap-4'}"
+      >
         <!-- Left spacer for balanced symmetry -->
         <div class="hidden flex-1 lg:block"></div>
 
         <!-- Center: 6-Card Selector Dots + Ferrofluid "View all projects" Button -->
         <div
-          class="flex flex-col items-center justify-center gap-2.5 sm:gap-3.5"
+          class="flex flex-col items-center justify-center gap-1.5 sm:gap-3"
           style="opacity: {Math.max(0, Math.min(1, (cardsBuildProgress - 0.45) / 0.5)).toFixed(3)};"
         >
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1">
             {#each githubPins as pin, dotIdx (pin.id)}
               {@const isActiveDot = Math.round(smoothCardIndex) === dotIdx}
               <button
@@ -2063,13 +2064,15 @@
                 onclick={(e) => {
                   e.stopPropagation();
                   manualCardIndex = dotIdx;
-                  isManualClickOverride = true;
-                  cursorController?.pointAndMoveToClick(e.clientX, e.clientY);
                 }}
-                class="h-2 cursor-pointer rounded-full transition-all duration-300 {isActiveDot
-                  ? 'w-7 bg-[#ff261b]'
-                  : 'w-2 bg-[#181816]/25 hover:bg-[#181816]/50'}"
-              ></button>
+                class="flex min-h-[28px] cursor-pointer items-center justify-center px-1"
+              >
+                <span
+                  class="block h-2 rounded-full transition-all duration-300 {isActiveDot
+                    ? 'w-7 bg-[#ff261b]'
+                    : 'w-2 bg-[#181816]/25 hover:bg-[#181816]/50'}"
+                ></span>
+              </button>
             {/each}
           </div>
 
@@ -2082,11 +2085,9 @@
             <FluidNavButton
               id="view-all-projects"
               label="View all projects"
-              compact={viewportW < 640}
+              compact={viewportW < 640 || isCarOrShortLandscape}
               onclick={(e) => {
                 e.stopPropagation();
-                isManualClickOverride = true;
-                cursorController?.pointAndMoveToClick(e.clientX, e.clientY);
                 const anchor = document.createElement('a');
                 anchor.href = 'https://github.com/aryandas079?tab=repositories';
                 anchor.target = '_blank';
@@ -2098,7 +2099,7 @@
         </div>
 
         <!-- FAR RIGHT BOTTOM END OF THE SCREEN: "every limit" built from binary rain (matching "Beyond" position) -->
-        <div class="flex w-full justify-end md:flex-1">
+        <div class="flex {isCarOrShortLandscape ? 'flex-1' : 'w-full md:flex-1'} justify-end">
           <div
             bind:this={everyLimitEl}
             data-binary-exclude={everyLimitBuildProgress > 0.72 ? '' : undefined}
@@ -2109,7 +2110,7 @@
             style="opacity: {Math.max(0, Math.min(1, (everyLimitBuildProgress - 0.32) / 0.54)).toFixed(3)};"
           >
             <span
-              class="font-display text-[clamp(2.1rem,6.5vw,6.2rem)] leading-[0.88] font-extrabold tracking-[-0.05em] text-[#181816] select-none"
+              class="font-display text-[clamp(1.65rem,min(6.2vw,9.5dvh),6.4rem)] leading-[0.88] font-extrabold tracking-[-0.05em] text-[#181816] select-none"
             >
               every limit
             </span>
@@ -2134,8 +2135,8 @@
   bind:this={skillsSectionEl}
   class="relative z-10 h-[520vh] w-full"
 >
-  <div class="sticky top-0 flex h-screen w-full flex-col justify-between overflow-hidden px-4 pt-7 pb-5 sm:px-10 sm:pt-14 sm:pb-8">
-    <div class="mx-auto flex h-full w-full max-w-[1440px] flex-col justify-between">
+  <div class="stage-viewport sticky top-0 flex h-[100dvh] w-full flex-col justify-between overflow-hidden px-4 pt-5 pb-4 sm:px-10 sm:pt-12 sm:pb-7">
+    <div class="mx-auto flex h-full w-full max-w-[1680px] flex-col justify-between">
       <!-- TOP-RIGHT RED "skills" PAGE TITLE (Written the exact same way as "projects" & "about" from 1 & 0 binary dust) -->
       <div class="flex w-full justify-end">
         <div
@@ -2148,7 +2149,7 @@
           style="opacity: {skillsTitleSolidOpacity.toFixed(3)};"
         >
           <h2
-            class="font-display text-[clamp(2.4rem,7.6vw,6.8rem)] leading-[0.86] font-extrabold tracking-[-0.05em] text-[#ff261b] select-none"
+            class="font-display text-[clamp(2rem,min(7.4vw,11dvh),7rem)] leading-[0.86] font-extrabold tracking-[-0.05em] text-[#ff261b] select-none"
           >
             skills
           </h2>
@@ -2176,12 +2177,16 @@
 
         <!-- STAGE 2 (ON SCROLLING): Clean Vertical Scrolling Tech Stack Drum + Show GitHub Stats Button on LEFT + Large Schrödinger's Cat / 0-1 Logo / GitHub Stats Frame on RIGHT -->
         <div
-          class="grid w-full grid-cols-1 items-center gap-4 sm:gap-6 lg:grid-cols-12 lg:gap-8"
+          class="fold-split-grid grid w-full items-center {isCarOrShortLandscape
+            ? 'grid-cols-12 gap-4'
+            : 'grid-cols-1 gap-3 sm:gap-5 md:grid-cols-12 lg:gap-8'}"
           style="pointer-events: {skillsDrumAlpha > 0.15 ? 'auto' : 'none'};"
         >
           <!-- LEFT OF THE SCREEN: Vertical Scrolling Skills Typography Drum + Show GitHub Stats Button Below -->
           <div
-            class="relative flex flex-col items-start justify-center gap-3 sm:gap-4 lg:col-span-5"
+            class="relative flex flex-col items-start justify-center {isCarOrShortLandscape
+              ? 'col-span-5 gap-2'
+              : 'gap-2.5 sm:gap-4 md:col-span-5'}"
             style="opacity: {skillsDrumAlpha.toFixed(3)}; transform: translate3d(0, {((1 - skillsDrumAlpha) * 20).toFixed(1)}px, 0);"
           >
             <div
@@ -2215,12 +2220,12 @@
                     bind:this={skillItemEls[sIdx]}
                     type="button"
                     onclick={(e) => selectSkillFromDrum(sIdx, e)}
-                    class="group absolute top-1/2 left-0 flex -translate-y-1/2 cursor-pointer items-center gap-2.5 text-left transition-colors duration-200 focus:outline-none sm:gap-3.5"
+                    class="group absolute top-1/2 left-0 flex -translate-y-1/2 cursor-pointer items-center gap-2 text-left transition-colors duration-200 sm:gap-3.5"
                     style="opacity: {itemOpacity.toFixed(3)}; transform: translate3d({curveX.toFixed(1)}px, {yOffset.toFixed(1)}px, 0) scale({itemScale.toFixed(3)}); transform-origin: left center;"
                   >
                     <!-- Three-dot active indicator -->
                     <span
-                      class="flex w-6 shrink-0 items-center justify-end gap-[3px] transition-opacity duration-200 sm:w-7"
+                      class="flex w-5 shrink-0 items-center justify-end gap-[3px] transition-opacity duration-200 sm:w-7"
                       style="opacity: {isCentered ? 1 : 0};"
                     >
                       <span class="h-[4px] w-[4px] rounded-full sm:h-[4.5px] sm:w-[4.5px] {isClickedSelected ? 'bg-[#ff261b]' : 'bg-[#181816]'}"></span>
@@ -2229,7 +2234,7 @@
                     </span>
 
                     <span
-                      class="font-display text-[1.45rem] leading-none font-extrabold tracking-[-0.04em] transition-colors duration-200 sm:text-[2.2rem] lg:text-[2.6rem] {isClickedSelected
+                      class="font-display text-[clamp(1.2rem,min(4.2vw,4.8dvh),2.7rem)] leading-none font-extrabold tracking-[-0.04em] transition-colors duration-200 {isClickedSelected
                         ? 'text-[#ff261b]'
                         : isCentered
                           ? 'text-[#181816]'
@@ -2254,7 +2259,7 @@
               <FluidNavButton
                 id="show-github-stats"
                 label="Show GitHub Stats"
-                compact={viewportW < 640}
+                compact={viewportW < 640 || isCarOrShortLandscape}
                 onclick={handleOpenGithubStats}
               />
             </div>
@@ -2263,7 +2268,9 @@
           <!-- RIGHTMOST PART OF THE SCREEN (Aligned flush with the right edge of the "skills" title above it) -->
           <div
             bind:this={skillsArtEl}
-            class="flex w-full flex-col items-center justify-center lg:col-span-7 lg:-mt-2 lg:items-end"
+            class="flex w-full flex-col items-center justify-center {isCarOrShortLandscape
+              ? 'col-span-7 items-end'
+              : 'md:col-span-7 md:items-end lg:-mt-2'}"
           >
             <BinaryScanlineCatArt
               buildProgress={skillsArtBuildProgress}
@@ -2279,8 +2286,6 @@
               }}
               onclick={(e) => {
                 e.stopPropagation();
-                isManualClickOverride = true;
-                cursorController?.pointAndMoveToClick(e.clientX, e.clientY);
               }}
             />
           </div>
@@ -2293,20 +2298,20 @@
 </section>
 
 <!-- ====================================================================== -->
-<!-- PAGE 5: CREDENTIALS SCREEN                                             -->
-<!-- - Top-left red "credentials" title built from binary dust & pointed    -->
-<!--   at by the 3D Chrome Cursor                                           -->
-<!-- - Full-screen 3D neural network connecting all credentials across      -->
-<!--   Machine Learning, Data Science, Full Stack & Software Development    -->
+<!-- PAGE 5: CREDENTIALS SCREEN (PURE WHITE + SIMPLIFIED 2D NEURAL NETWORK) -->
+<!-- - Top-left red "credentials" title + clean minimal 2D neural graph     -->
 <!-- ====================================================================== -->
 <section
   id="credentials-page"
   bind:this={credentialsSectionEl}
-  class="relative z-10 h-[230vh] w-full"
+  class="relative z-10 h-[230vh] w-full bg-[#FFFFFF] text-[#141412]"
 >
-  <div class="sticky top-0 flex h-screen w-full flex-col overflow-hidden">
+  <div class="sticky top-0 flex h-[100dvh] w-full flex-col overflow-hidden bg-[#FFFFFF]">
     <!-- TOP-LEFT RED "credentials" PAGE TITLE (Written from 1 & 0 binary dust & pointed by 3D cursor) -->
-    <div class="pointer-events-none relative z-30 mx-auto flex w-full max-w-[1440px] justify-start px-4 pt-7 sm:px-10 sm:pt-14">
+    <div
+      class="pointer-events-none relative z-30 mx-auto flex w-full max-w-[1680px] justify-start px-4 sm:px-10"
+      style="padding-top: max(1.25rem, env(safe-area-inset-top), var(--tv-overscan-y)); padding-left: max(1rem, env(safe-area-inset-left), var(--tv-overscan-x));"
+    >
       <div
         bind:this={credentialsAnchorEl}
         data-binary-exclude
@@ -2317,14 +2322,14 @@
         style="opacity: {credentialsTitleSolidOpacity.toFixed(3)};"
       >
         <h2
-          class="font-display text-[clamp(2.25rem,7.2vw,6.4rem)] leading-[0.86] font-extrabold tracking-[-0.05em] text-[#ff261b] select-none"
+          class="font-display text-[clamp(1.9rem,min(7vw,11dvh),6.6rem)] leading-[0.86] font-extrabold tracking-[-0.05em] text-[#ff261b] select-none"
         >
           credentials
         </h2>
       </div>
     </div>
 
-    <!-- FULL-SCREEN 3D NEURAL NETWORK CREDENTIALS STAGE -->
+    <!-- FULL-SCREEN SIMPLIFIED WHITE 2D NEURAL NETWORK CREDENTIALS STAGE -->
     <div
       bind:this={credentialsStageEl}
       class="absolute inset-0 z-10 h-full w-full"
@@ -2338,20 +2343,21 @@
 </section>
 
 <!-- ====================================================================== -->
-<!-- PAGE 6: THANK YOU FINALE SCREEN                                        -->
-<!-- - Full-viewport warm vermilion canvas built from binary rain & dust    -->
-<!-- - Oversized Fraunces soft-serif "Thank you" editorial marquee          -->
-<!-- - Centered Say Hi, LinkedIn, and direct CV download (Profile PDF)      -->
+<!-- PAGE 6: CONNECT FINALE SCREEN (Black, White & Red Swiss Poster)        -->
+<!-- - Single top-left 00 CONNECT button (pops C++ coding animation + links -->
+<!--   + 3D Cluster Topology explorer) + monumental red 'ad' monogram       -->
 <!-- ====================================================================== -->
 <section
   id="connect-page"
   bind:this={connectSectionEl}
   class="relative z-25 h-[180vh] w-full"
 >
-  <div class="sticky top-0 h-screen w-full overflow-hidden">
+  <div class="sticky top-0 h-[100dvh] w-full overflow-hidden">
     <ThankYouFinaleStage
       buildProgress={thankYouBuildProgress}
       bind:anchorEl={thankYouAnchorEl}
+      bind:connectButtonEl={connectButtonEl}
+      bind:sayHiOpen={sayHiModalOpen}
     />
   </div>
 </section>
@@ -2367,12 +2373,12 @@
   <div
     bind:this={focusBackdropEl}
     onclick={closeCardFocusView}
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/84 p-3 sm:p-6"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/84 p-2.5 sm:p-6"
     style="opacity: 0;"
   >
     <div
       onclick={(e) => e.stopPropagation()}
-      class="relative h-[82vh] max-h-[700px] w-full max-w-[760px]"
+      class="relative h-[88dvh] max-h-[760px] w-full max-w-[min(860px,94vw)]"
       style="perspective: 2200px;"
     >
       <!-- GSAP 3D Flipping Card Container (0deg Front -> 180deg Back) -->

@@ -273,12 +273,12 @@
 
       const swirlScale = Math.min(1, Math.max(0.55, width / 1100));
 
-      const aryandasNorm = sampleWordPoints('aryandas', 680, 140, scaledWordCount);
+      const aryandasNorm = sampleWordPoints('Aryan Das', 680, 140, scaledWordCount);
       const aboutNorm = sampleWordPoints('about', 320, 100, scaledWordCount);
       const projectsNorm = sampleWordPoints('projects', 420, 100, scaledWordCount);
       const skillsNorm = sampleWordPoints('skills', 320, 100, scaledWordCount);
       const credentialsNorm = sampleWordPoints('credentials', 560, 100, scaledWordCount);
-      const thankYouNorm = sampleWordPoints('Thank you', 620, 140, scaledWordCount);
+      const thankYouNorm = sampleWordPoints('ad', 680, 220, scaledWordCount);
 
       const buildTransition = (
         src: Array<{ nx: number; ny: number }>,
@@ -392,7 +392,8 @@
       srcEl: HTMLElement | null,
       dstEl: HTMLElement | null,
       clock: number,
-      tick: number
+      tick: number,
+      fadeToWhite = false
     ): void {
       if (progress <= 0.002 || progress >= 0.998 || particles.length === 0) return;
 
@@ -453,10 +454,14 @@
         const ptAlpha = cloudAlpha * (0.55 + 0.45 * midEnvelope);
         const sz = glyphBase * (0.9 + 0.24 * midEnvelope);
 
+        const lightMix = fadeToWhite ? Math.max(0, Math.min(1, (easeT - 0.22) / 0.55)) : 0;
         if (p.isRedAccent) {
           gpuRenderer.push(screenX, screenY, sz, bitVal, RED_R, RED_G, RED_B, ptAlpha);
         } else {
-          gpuRenderer.push(screenX, screenY, sz, bitVal, INK_R, INK_G, INK_B, ptAlpha);
+          const r = INK_R + (1.0 - INK_R) * lightMix;
+          const g = INK_G + (1.0 - INK_G) * lightMix;
+          const b = INK_B + (1.0 - INK_B) * lightMix;
+          gpuRenderer.push(screenX, screenY, sz, bitVal, r, g, b, ptAlpha);
         }
       }
     }
@@ -467,7 +472,8 @@
       el: HTMLElement | null,
       padX: number,
       padY: number,
-      tick: number
+      tick: number,
+      darkSurface = false
     ): void {
       if (buildP <= 0.004 || buildP >= 0.992 || !el || pts.length === 0) return;
 
@@ -517,6 +523,8 @@
 
         if (red) {
           gpuRenderer.push(curX, curY, glyphSize, bitVal, RED_R, RED_G, RED_B, ptAlpha);
+        } else if (darkSurface) {
+          gpuRenderer.push(curX, curY, glyphSize, bitVal, 0.94, 0.94, 0.96, ptAlpha);
         } else {
           gpuRenderer.push(curX, curY, glyphSize, bitVal, INK_R, INK_G, INK_B, ptAlpha);
         }
@@ -620,8 +628,8 @@
       pushWordDustCascade(heroToAboutParticles, smoothHeroP, heroAnchorEl, aboutAnchorEl, clock, tick);
       pushWordDustCascade(aboutToProjectsParticles, smoothProjP, aboutAnchorEl, projectsAnchorEl, clock, tick);
       pushWordDustCascade(projectsToSkillsParticles, smoothSkillsMorphP, projectsAnchorEl, skillsAnchorEl, clock, tick);
-      pushWordDustCascade(skillsToCredentialsParticles, smoothCredentialsMorphP, skillsAnchorEl, credentialsAnchorEl, clock, tick);
-      pushWordDustCascade(credentialsToThankYouParticles, smoothThankYouMorphP, credentialsAnchorEl, thankYouAnchorEl, clock, tick);
+      pushWordDustCascade(skillsToCredentialsParticles, smoothCredentialsMorphP, skillsAnchorEl, credentialsAnchorEl, clock, tick, false);
+      pushWordDustCascade(credentialsToThankYouParticles, smoothThankYouMorphP, credentialsAnchorEl, thankYouAnchorEl, clock, tick, false);
 
       for (let tIdx = 0; tIdx < smoothTopicP.length; tIdx++) {
         const cloud = topicClouds[tIdx];
@@ -649,7 +657,7 @@
       }
 
       pushRainCondensationCloud(cardDustTemplate, smoothSkillsArtP, skillsArtEl, 8, 8, tick);
-      pushRainCondensationCloud(cardDustTemplate, smoothCredentialsBuildP, credentialsStageEl, 18, 18, tick);
+      pushRainCondensationCloud(cardDustTemplate, smoothCredentialsBuildP, credentialsStageEl, 18, 18, tick, false);
 
       gpuRenderer.render();
 

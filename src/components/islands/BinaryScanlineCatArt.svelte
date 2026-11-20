@@ -1027,8 +1027,8 @@
 
       if (!stageCanvasEl) return;
       const rect = stageCanvasEl.getBoundingClientRect();
-      const w = Math.max(240, Math.round(rect.width || 480));
-      const h = Math.max(220, Math.round(rect.height || 400));
+      const w = Math.max(180, Math.round(rect.width || 480));
+      const h = Math.max(160, Math.round(rect.height || 360));
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
       if (
@@ -1256,11 +1256,11 @@
   }}
   onclick={handleFrameClick}
   style="opacity: {cardAlpha.toFixed(3)}; transform: translate3d(0, {translateY.toFixed(1)}px, 0);"
-  class="group relative mx-auto flex w-full max-w-[540px] cursor-pointer flex-col overflow-hidden rounded-[24px] border border-[#181816]/14 bg-white p-4 shadow-[0_20px_54px_rgba(24,24,22,0.09)] transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] select-none sm:rounded-[28px] sm:p-5 lg:mr-0 lg:ml-auto xl:max-w-[580px]"
+  class="group relative mx-auto flex w-full max-w-[min(560px,100%)] cursor-pointer flex-col overflow-hidden rounded-[22px] border border-[#181816]/14 bg-white p-3 shadow-[0_20px_54px_rgba(24,24,22,0.09)] transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] select-none sm:rounded-[28px] sm:p-4 md:mr-0 md:ml-auto lg:p-5 xl:max-w-[620px]"
 >
   <!-- Clean Top Header -->
-  <div class="mb-3 flex items-center justify-between gap-3 border-b border-[#181816]/10 pb-2.5">
-    <span class="truncate font-display text-sm font-extrabold tracking-[-0.02em] text-[#181816]">
+  <div class="mb-2 flex items-center justify-between gap-2.5 border-b border-[#181816]/10 pb-2 sm:mb-3 sm:pb-2.5">
+    <span class="truncate font-display text-xs font-extrabold tracking-[-0.02em] text-[#181816] sm:text-sm">
       {headerTitle}
     </span>
 
@@ -1276,7 +1276,7 @@
   </div>
 
   <!-- Large Unified Frame Viewport (0/1 Schrödinger's Cat -> In-Frame GitHub Dark C++ -> Binary Rain -> Official 0/1 Logo OR GitHub Stats) -->
-  <div class="relative h-[250px] w-full overflow-hidden rounded-2xl bg-white sm:h-[340px] lg:h-[370px] xl:h-[420px]">
+  <div class="relative h-[clamp(185px,42dvh,450px)] w-full overflow-hidden rounded-2xl bg-white sm:h-[clamp(220px,46dvh,460px)] lg:h-[clamp(245px,50dvh,480px)]">
     <!-- Live Canvas Layer (0/1 Animated Schrödinger's Cat + Binary Rain -> Official 0/1 Skill Logo / Binary Stats Condensation) -->
     <canvas
       bind:this={stageCanvasEl}
@@ -1286,26 +1286,26 @@
     <!-- Computational Schrödinger's Equation directly beneath the 0/1 Schrödinger's Cat -->
     {#if stageMode === 'cat'}
       <div
-        class="pointer-events-none absolute inset-x-0 bottom-2 z-10 flex flex-col items-center justify-center gap-1.5 border-t border-[#181816]/8 bg-white/92 px-3 pt-2 pb-1 text-center sm:pt-2.5"
+        class="pointer-events-none absolute inset-x-0 bottom-1 z-10 flex flex-col items-center justify-center gap-1 border-t border-[#181816]/8 bg-white/92 px-2 pt-1.5 pb-1 text-center sm:bottom-2 sm:gap-1.5 sm:px-3 sm:pt-2.5"
       >
         <!-- Time-Dependent Schrödinger's Equation for a Computer Bit / CPU Hamiltonian -->
         <div
-          class="flex items-center justify-center gap-1.5 font-serif text-[14.5px] leading-none tracking-tight text-[#181816] sm:text-[18px]"
+          class="flex items-center justify-center gap-1 font-serif text-[12.5px] leading-none tracking-tight text-[#181816] sm:gap-1.5 sm:text-[16px] lg:text-[18px]"
           aria-label="i h-bar partial derivative with respect to t of ket psi bit equals H-hat CPU acting on ket psi bit"
         >
           <span class="italic">i</span><span class="font-medium">ħ</span>
-          <span class="inline-flex flex-col items-center justify-center px-0.5 text-[12px] leading-[1.05] sm:text-[13px]">
+          <span class="inline-flex flex-col items-center justify-center px-0.5 text-[10.5px] leading-[1.05] sm:text-[13px]">
             <span class="border-b border-[#181816]/75 px-1 pb-[1px]">∂</span>
             <span class="pt-[1px]">∂<span class="italic">t</span></span>
           </span>
-          <span class="font-normal text-[#181816]/75">|</span><span class="italic font-semibold text-[#ff261b]">ψ</span><sub class="-ml-0.5 font-mono text-[9.5px] font-bold not-italic text-[#181816]/65">bit</sub><span class="font-normal text-[#181816]/75">⟩</span>
-          <span class="px-1 font-sans text-[15px] font-medium text-[#181816]/60">=</span>
-          <span class="italic font-semibold text-[#181816]">Ĥ</span><sub class="-ml-0.5 font-mono text-[9.5px] font-bold not-italic text-[#ff261b]">CPU</sub>
-          <span class="ml-0.5 font-normal text-[#181816]/75">|</span><span class="italic font-semibold text-[#ff261b]">ψ</span><sub class="-ml-0.5 font-mono text-[9.5px] font-bold not-italic text-[#181816]/65">bit</sub><span class="font-normal text-[#181816]/75">⟩</span>
+          <span class="font-normal text-[#181816]/75">|</span><span class="italic font-semibold text-[#ff261b]">ψ</span><sub class="-ml-0.5 font-mono text-[8.5px] font-bold not-italic text-[#181816]/65 sm:text-[9.5px]">bit</sub><span class="font-normal text-[#181816]/75">⟩</span>
+          <span class="px-0.5 font-sans text-[13px] font-medium text-[#181816]/60 sm:px-1 sm:text-[15px]">=</span>
+          <span class="italic font-semibold text-[#181816]">Ĥ</span><sub class="-ml-0.5 font-mono text-[8.5px] font-bold not-italic text-[#ff261b] sm:text-[9.5px]">CPU</sub>
+          <span class="ml-0.5 font-normal text-[#181816]/75">|</span><span class="italic font-semibold text-[#ff261b]">ψ</span><sub class="-ml-0.5 font-mono text-[8.5px] font-bold not-italic text-[#181816]/65 sm:text-[9.5px]">bit</sub><span class="font-normal text-[#181816]/75">⟩</span>
         </div>
 
         <!-- Computing Qubit Basis Superposition linking the 0/1 Binary Cat to the Equation -->
-        <div class="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-0.5 font-mono text-[10.5px] font-medium text-[#181816]/68 tabular-nums sm:text-[11px]">
+        <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 font-mono text-[9.5px] font-medium text-[#181816]/68 tabular-nums sm:gap-x-2.5 sm:text-[11px]">
           <span>
             |<span class="text-[#ff261b] font-semibold">ψ</span>⟩ = α|<span class="font-bold text-[#181816]">0</span>⟩ + β|<span class="font-bold text-[#181816]">1</span>⟩
           </span>
@@ -1326,38 +1326,38 @@
         onclick={(e) => e.stopPropagation()}
         class="absolute inset-0 z-30 flex flex-col justify-between bg-[#0d1117] text-left transition-opacity duration-300"
       >
-        <div class="flex items-center justify-between border-b border-[#30363d] bg-[#161b22] px-4 py-2.5">
-          <div class="flex items-center gap-2">
-            <span class="h-3 w-3 rounded-full bg-[#ff5f56]"></span>
-            <span class="h-3 w-3 rounded-full bg-[#ffbd2e]"></span>
-            <span class="h-3 w-3 rounded-full bg-[#27c93f]"></span>
-            <span class="ml-2 font-mono text-xs font-semibold text-[#e6edf3]">
+        <div class="flex items-center justify-between gap-2 border-b border-[#30363d] bg-[#161b22] px-3 py-2 sm:px-4 sm:py-2.5">
+          <div class="flex min-w-0 items-center gap-2">
+            <span class="h-2.5 w-2.5 shrink-0 rounded-full bg-[#ff5f56] sm:h-3 sm:w-3"></span>
+            <span class="h-2.5 w-2.5 shrink-0 rounded-full bg-[#ffbd2e] sm:h-3 sm:w-3"></span>
+            <span class="h-2.5 w-2.5 shrink-0 rounded-full bg-[#27c93f] sm:h-3 sm:w-3"></span>
+            <span class="ml-1.5 truncate font-mono text-[11px] font-semibold text-[#e6edf3] sm:text-xs">
               {cppEditorFilename}
             </span>
           </div>
-          <span class="font-mono text-[11px] text-[#8b949e]">
+          <span class="hidden truncate font-mono text-[11px] text-[#8b949e] sm:inline">
             {cppEditorRightTag}
           </span>
         </div>
 
-        <div class="flex flex-1 flex-col justify-center overflow-x-auto px-3.5 py-2.5 font-mono text-[10.5px] leading-[1.55] sm:px-7 sm:py-4 sm:text-[13px] sm:leading-[1.68]">
+        <div class="flex flex-1 flex-col justify-center overflow-x-auto overflow-y-auto px-3 py-2 font-mono text-[10px] leading-[1.5] sm:px-6 sm:py-4 sm:text-[13px] sm:leading-[1.68]">
           {#each visibleCppLines as line (line.lineNumber)}
-            <div class="flex min-h-[21px] items-baseline rounded px-1.5 {line.isCursorLine ? 'bg-[#161b22]/85' : ''}">
-              <span class="mr-3.5 w-5 shrink-0 text-right text-[11px] text-[#6e7681] select-none">
+            <div class="flex min-h-[18px] items-baseline rounded px-1 sm:min-h-[21px] sm:px-1.5 {line.isCursorLine ? 'bg-[#161b22]/85' : ''}">
+              <span class="mr-2.5 w-5 shrink-0 text-right text-[10px] text-[#6e7681] select-none sm:mr-3.5 sm:text-[11px]">
                 {line.lineNumber}
               </span>
               <span class="whitespace-pre break-normal">
                 {#each line.tokens as tok, tIdx (tIdx)}
                   <span style="color: {tok.color};">{tok.text}</span>
                 {/each}{#if line.isCursorLine}<span
-                    class="ml-[1px] inline-block h-[14px] w-[7px] translate-y-[2px] bg-[#58a6ff] animate-pulse"
+                    class="ml-[1px] inline-block h-[13px] w-[6.5px] translate-y-[2px] bg-[#58a6ff] animate-pulse sm:h-[14px] sm:w-[7px]"
                   ></span>{/if}
               </span>
             </div>
           {/each}
         </div>
 
-        <div class="border-t border-[#30363d] bg-[#161b22]/90 px-4 py-2 font-mono text-[11px] text-[#8b949e]">
+        <div class="truncate border-t border-[#30363d] bg-[#161b22]/90 px-3 py-1.5 font-mono text-[10px] text-[#8b949e] sm:px-4 sm:py-2 sm:text-[11px]">
           {#if cppTypedCount >= totalCppChars}
             <span class="text-[#3fb950]">✓</span>
             <span class="ml-1.5 text-[#e6edf3]">

@@ -5,10 +5,13 @@
     InstancedBinaryDustRenderer,
     detectDeviceGpuTier,
   } from '../../lib/three/InstancedBinaryDust';
+  import ClusterTopologyNetwork from './ClusterTopologyNetwork.svelte';
 
   interface Props {
     buildProgress?: number;
     anchorEl?: HTMLElement | null;
+    connectButtonEl?: HTMLElement | null;
+    sayHiOpen?: boolean;
   }
 
   interface CppToken {
@@ -22,6 +25,7 @@
     isCursorLine: boolean;
   }
 
+  // Authentic GitHub Dark Default C++ syntax highlighting
   const SAY_HI_CPP_LINES: CppToken[][] = [
     [
       { text: '#include', color: '#ff7b72' },
@@ -66,7 +70,16 @@
     0
   );
 
-  const CONNECT_CHANNELS = [
+  interface ConnectChannel {
+    id: 'instagram' | 'linkedin' | 'github' | 'mail' | 'resume' | 'cluster';
+    label: string;
+    handle: string;
+    href?: string;
+    external?: boolean;
+    download?: string;
+  }
+
+  const CONNECT_CHANNELS: ConnectChannel[] = [
     {
       id: 'instagram',
       label: 'Instagram',
@@ -95,27 +108,46 @@
       href: 'mailto:aryandas.original@gmail.com',
       external: false,
     },
-  ] as const;
+    {
+      id: 'resume',
+      label: 'Resume',
+      handle: 'Aryan_Das_CV.pdf',
+      href: '/assets/aistudio/Profile_585ff650.pdf',
+      download: 'Aryan_Das_CV.pdf',
+    },
+    {
+      id: 'cluster',
+      label: '3D Cluster',
+      handle: 'Interactive Compute Topology',
+    },
+  ];
 
   let {
     buildProgress = 0,
     anchorEl = $bindable<HTMLElement | null>(null),
+    connectButtonEl = $bindable<HTMLElement | null>(null),
+    sayHiOpen = $bindable(false),
   }: Props = $props();
 
   let stageEl = $state<HTMLElement | null>(null);
   let canvasEl = $state<HTMLCanvasElement | null>(null);
-  let linksContainerEl = $state<HTMLElement | null>(null);
   let cvDownloaded = $state(false);
   let cvResetTimer = 0;
 
-  // Interactive Say Hi Floating C++ Editor + Binary-Dust Social Icons state
-  let sayHiOpen = $state(false);
+  // Interactive Connect Floating C++ Editor + Binary-Dust Pop-Out Links + 3D Cluster Modal
+  let connectModalOpen = $state(false);
+  let clusterModalOpen = $state(false);
+
+  $effect(() => {
+    sayHiOpen = connectModalOpen || clusterModalOpen;
+  });
+
   let sayHiBackdropEl = $state<HTMLElement | null>(null);
   let sayHiEditorEl = $state<HTMLElement | null>(null);
   let sayHiCodeScrollEl = $state<HTMLElement | null>(null);
   let sayHiTerminalEl = $state<HTMLElement | null>(null);
   let sayHiDustCanvasEl = $state<HTMLCanvasElement | null>(null);
-  let sayHiIconEls = $state<Array<HTMLElement | null>>([null, null, null, null]);
+  let sayHiIconEls = $state<Array<HTMLElement | null>>([null, null, null, null, null, null]);
   let sayHiTimeline: gsap.core.Timeline | null = null;
   let sayHiIconsTl: gsap.core.Timeline | null = null;
   let cppTypedChars = $state(0);
@@ -124,16 +156,16 @@
   let copiedMail = $state(false);
   let copyMailTimer = 0;
 
-  // Callbacks wired inside onMount to drive the modal's binary dust -> icon condensation
   let startIconDustCondensation: (() => void) | null = null;
   let resetIconDustCondensation: (() => void) | null = null;
   let emitModalIconBurst: ((clientX: number, clientY: number, count?: number) => void) | null = null;
   let modalGpuRenderer: InstancedBinaryDustRenderer | null = null;
+  let triggerLinkDustBurst: ((clientX: number, clientY: number, count?: number) => void) | null = null;
 
-  // Lazy GPU InstancedMesh lifecycle for the Say Hi modal (zero idle WebGL context when closed)
+  // Lazy GPU InstancedMesh lifecycle for the Connect C++ modal (zero idle WebGL context when closed)
   $effect(() => {
     const modalCanvas = sayHiDustCanvasEl;
-    if (!sayHiOpen || !modalCanvas) {
+    if (!connectModalOpen || !modalCanvas) {
       if (modalGpuRenderer) {
         modalGpuRenderer.dispose();
         modalGpuRenderer = null;
@@ -146,7 +178,7 @@
     const mh = Math.max(320, window.innerHeight);
     const renderer = new InstancedBinaryDustRenderer({
       canvas: modalCanvas,
-      maxInstances: 460,
+      maxInstances: 620,
       width: mw,
       height: mh,
       maxDpr: gpuTier.recommendedMaxDpr,
@@ -161,11 +193,10 @@
     };
   });
 
-  // Non-passive touch handlers on the floating C++ code editor for 3D micro-tilt,
-  // interactive binary dust trail, tap-to-complete/replay, and swipe-down dismiss
+  // Non-passive touch handlers on the floating C++ editor (micro-tilt, dust trail, tap-to-complete, swipe-down dismiss)
   $effect(() => {
     const editorEl = sayHiEditorEl;
-    if (!sayHiOpen || !editorEl) return;
+    if (!connectModalOpen || !editorEl) return;
 
     type EditorTouchMode = 'none' | 'pending' | 'tilt-scroll' | 'dismiss';
     let mode: EditorTouchMode = 'none';
@@ -253,7 +284,7 @@
       mode = 'none';
 
       if (endedMode === 'dismiss' && dragY > 72) {
-        closeSayHiModal();
+        closeConnectModal();
         return;
       }
 
@@ -348,17 +379,11 @@
       : null
   );
 
-  // Derived visual phases from scroll-driven buildProgress (0..1)
-  let titleSolidOpacity = $derived(Math.max(0, Math.min(1, (buildProgress - 0.36) / 0.46)));
-  let linksOpacity = $derived(Math.max(0, Math.min(1, (buildProgress - 0.5) / 0.38)));
-  let linksTranslateY = $derived((1 - linksOpacity) * 18);
-  let footerOpacity = $derived(Math.max(0, Math.min(1, (buildProgress - 0.64) / 0.32)));
+  // Derived reveal opacity from scroll-driven buildProgress (0..1)
+  let headerOpacity = $derived(Math.max(0, Math.min(1, (buildProgress - 0.36) / 0.44)));
 
-  // Hover burst callback wired inside onMount so hovering/clicking links emits subtle cream binary dust
-  let triggerLinkDustBurst: ((clientX: number, clientY: number, count?: number) => void) | null = null;
-
-  function handleLinkHover(e: PointerEvent): void {
-    triggerLinkDustBurst?.(e.clientX, e.clientY, 14);
+  function handleButtonHover(e: PointerEvent): void {
+    triggerLinkDustBurst?.(e.clientX, e.clientY, 16);
   }
 
   function revealIconsFromBinaryDust(): void {
@@ -370,13 +395,12 @@
     const tl = gsap.timeline({ defaults: { force3D: true } });
     sayHiIconsTl = tl;
 
-    // Each social icon crystallizes smoothly right as its binary dust cloud finishes condensing
     sayHiIconEls.forEach((el, idx) => {
       if (!el) return;
-      const startAt = 0.38 + idx * 0.12;
+      const startAt = 0.34 + idx * 0.09;
       tl.fromTo(
         el,
-        { opacity: 0, scale: 0.62, y: 8, filter: 'blur(5px)' },
+        { opacity: 0, scale: 0.58, y: 12, filter: 'blur(5px)' },
         {
           opacity: 1,
           scale: 1,
@@ -392,22 +416,22 @@
   }
 
   function replaySayHiCpp(clientX: number, clientY: number): void {
-    emitModalIconBurst?.(clientX, clientY, 16);
+    emitModalIconBurst?.(clientX, clientY, 18);
     cppTypedChars = 0;
     iconsReady = false;
     resetIconDustCondensation?.();
     sayHiIconsTl?.kill();
     sayHiIconEls.forEach((el) => {
       if (el) {
-        gsap.set(el, { opacity: 0, scale: 0.62, y: 8, filter: 'blur(5px)' });
+        gsap.set(el, { opacity: 0, scale: 0.58, y: 12, filter: 'blur(5px)' });
       }
     });
   }
 
-  async function openSayHiModal(e: MouseEvent): Promise<void> {
+  async function openConnectModal(e: MouseEvent): Promise<void> {
     e.stopPropagation();
     triggerLinkDustBurst?.(e.clientX, e.clientY, 28);
-    sayHiOpen = true;
+    connectModalOpen = true;
     cppTypedChars = 0;
     iconsReady = false;
     hoveredChannelId = null;
@@ -419,10 +443,9 @@
     sayHiTimeline?.kill();
     sayHiIconsTl?.kill();
 
-    // Ensure all 4 icon buttons start completely invisible until the C++ code finishes running
     sayHiIconEls.forEach((el) => {
       if (el) {
-        gsap.set(el, { opacity: 0, scale: 0.62, y: 8, filter: 'blur(5px)' });
+        gsap.set(el, { opacity: 0, scale: 0.58, y: 12, filter: 'blur(5px)' });
       }
     });
 
@@ -433,7 +456,7 @@
       tl.fromTo(
         sayHiBackdropEl,
         { opacity: 0 },
-        { opacity: 1, duration: 0.34, ease: 'power2.out' },
+        { opacity: 1, duration: 0.32, ease: 'power2.out' },
         0
       );
     }
@@ -443,13 +466,13 @@
         sayHiEditorEl,
         { opacity: 0, scale: 0.92, y: 24 },
         { opacity: 1, scale: 1, y: 0, duration: 0.54, ease: 'expo.out' },
-        0.05
+        0.04
       );
     }
   }
 
-  function closeSayHiModal(): void {
-    if (!sayHiOpen) return;
+  function closeConnectModal(): void {
+    if (!connectModalOpen) return;
     sayHiTimeline?.kill();
     sayHiIconsTl?.kill();
     resetIconDustCondensation?.();
@@ -457,7 +480,7 @@
     const tl = gsap.timeline({
       defaults: { force3D: true },
       onComplete: () => {
-        sayHiOpen = false;
+        connectModalOpen = false;
         iconsReady = false;
         hoveredChannelId = null;
       },
@@ -468,7 +491,7 @@
     if (visibleIcons.length > 0 && iconsReady) {
       tl.to(
         visibleIcons,
-        { opacity: 0, scale: 0.78, y: 10, duration: 0.18, stagger: 0.02, ease: 'power2.in' },
+        { opacity: 0, scale: 0.78, y: 10, duration: 0.16, stagger: 0.02, ease: 'power2.in' },
         0
       );
     }
@@ -476,15 +499,25 @@
     if (sayHiEditorEl) {
       tl.to(
         sayHiEditorEl,
-        { opacity: 0, scale: 0.94, y: 16, duration: 0.24, ease: 'power2.in' },
+        { opacity: 0, scale: 0.94, y: 16, duration: 0.22, ease: 'power2.in' },
         0.02
       );
     }
     if (sayHiBackdropEl) {
-      tl.to(sayHiBackdropEl, { opacity: 0, duration: 0.26, ease: 'power2.in' }, 0.05);
+      tl.to(sayHiBackdropEl, { opacity: 0, duration: 0.24, ease: 'power2.in' }, 0.04);
     } else {
-      sayHiOpen = false;
+      connectModalOpen = false;
     }
+  }
+
+  function openClusterTopology(e: MouseEvent): void {
+    e.stopPropagation();
+    emitModalIconBurst?.(e.clientX, e.clientY, 24);
+    connectModalOpen = false;
+    iconsReady = false;
+    hoveredChannelId = null;
+    resetIconDustCondensation?.();
+    clusterModalOpen = true;
   }
 
   async function handleMailIconClick(e: MouseEvent): Promise<void> {
@@ -498,12 +531,13 @@
         copiedMail = false;
       }, 2400);
     } catch {
-      // Native mailto href still executes
+      // Native mailto still executes
     }
   }
 
   function handleCvClick(e: MouseEvent): void {
-    triggerLinkDustBurst?.(e.clientX, e.clientY, 26);
+    e.stopPropagation();
+    emitModalIconBurst?.(e.clientX, e.clientY, 24);
     cvDownloaded = true;
     window.clearTimeout(cvResetTimer);
     cvResetTimer = window.setTimeout(() => {
@@ -527,34 +561,70 @@
 
     const mainGpu = new InstancedBinaryDustRenderer({
       canvas,
-      maxInstances: 2800,
+      maxInstances: 5400,
       width,
       height,
       maxDpr: Math.min(1.75, gpuTier.recommendedMaxDpr),
     });
 
-    // Normalized vermilion-stage & modal palettes for InstancedMesh shader
-    const CREAM_R = 245 / 255;
-    const CREAM_G = 243 / 255;
-    const CREAM_B = 234 / 255;
-    const LEAD_R = 1.0;
-    const LEAD_G = 253 / 255;
-    const LEAD_B = 246 / 255;
-    const DARK_R = 116 / 255;
-    const DARK_G = 22 / 255;
-    const DARK_B = 12 / 255;
-    const RUBY_R = 122 / 255;
-    const RUBY_G = 24 / 255;
-    const RUBY_B = 14 / 255;
-    const CRIMSON_R = 1.0;
-    const CRIMSON_G = 69 / 255;
-    const CRIMSON_B = 54 / 255;
+    // Strict White, Obsidian Black & Signature #FF261B Red palette for InstancedMesh binary dust
+    const WHITE_R = 1.0;
+    const WHITE_G = 1.0;
+    const WHITE_B = 1.0;
+    const INK_R = 18 / 255;
+    const INK_G = 18 / 255;
+    const INK_B = 16 / 255;
+    const MUTED_R = 88 / 255;
+    const MUTED_G = 86 / 255;
+    const MUTED_B = 82 / 255;
+    const RED_R = 1.0;
+    const RED_G = 38 / 255;
+    const RED_B = 27 / 255;
 
-    // =========================================================================
-    // 1. VERMILION BINARY RAIN STREAMS (Flat TypedArrays — ZERO per-frame GC)
-    // =========================================================================
-    const CELL_H = 17;
-    const MAX_LEN = 18;
+    // Exact Monumental Geometric "ad" Paths (viewBox 0 0 1440 780) rasterized into crisp 1 & 0 binary cells
+    const AD_VB_W = 1440;
+    const AD_VB_H = 780;
+    const AD_PATH_A =
+      'M 42 220 H 460 C 610 220 676 300 676 430 V 780 H 196 C 54 780 -8 704 -8 594 C -8 486 58 424 196 424 H 516 C 516 368 484 344 426 344 H 42 Z M 218 544 H 516 V 656 H 218 C 166 656 144 632 144 600 C 144 568 166 544 218 544 Z';
+    const AD_PATH_D =
+      'M 1288 0 H 1448 V 780 H 1032 C 836 780 742 664 742 500 C 742 336 836 220 1032 220 H 1288 Z M 1044 352 H 1288 V 648 H 1044 C 942 648 898 588 898 500 C 898 412 942 352 1044 352 Z';
+
+    // Pre-rasterize mask once offscreen (360 x 195 = exact 1:4 scale of 1440 x 780)
+    const MASK_W = 360;
+    const MASK_H = 195;
+    const maskCanvas = document.createElement('canvas');
+    maskCanvas.width = MASK_W;
+    maskCanvas.height = MASK_H;
+    const maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
+    let maskAlpha = new Uint8Array(MASK_W * MASK_H);
+    if (maskCtx) {
+      maskCtx.clearRect(0, 0, MASK_W, MASK_H);
+      maskCtx.save();
+      maskCtx.scale(MASK_W / AD_VB_W, MASK_H / AD_VB_H);
+      maskCtx.fillStyle = '#ffffff';
+      maskCtx.fill(new Path2D(AD_PATH_A), 'evenodd');
+      maskCtx.fill(new Path2D(AD_PATH_D), 'evenodd');
+      maskCtx.restore();
+      const raw = maskCtx.getImageData(0, 0, MASK_W, MASK_H).data;
+      for (let p = 0; p < MASK_W * MASK_H; p++) {
+        maskAlpha[p] = raw[p * 4 + 3] > 110 ? 1 : 0;
+      }
+    }
+
+    // Flat TypedArrays for the living Binary 1 & 0 "ad" Monogram (ZERO per-frame GC)
+    let monoCount = 0;
+    let monoX = new Float32Array(0);
+    let monoY = new Float32Array(0);
+    let monoBit = new Uint8Array(0);
+    let monoEdge = new Uint8Array(0);
+    let monoPhase = new Float32Array(0);
+    let monoWavePos = new Float32Array(0);
+    let monoGlyphSize = 14;
+    let monoFlipCursor = 0;
+
+    // 1. Subtle Obsidian Binary Rain Streams (Flat TypedArrays — ZERO per-frame GC)
+    const CELL_H = 18;
+    const MAX_LEN = 16;
     const RAIN_STEPS = 8;
     const rainAlphaLut = new Float32Array((MAX_LEN + 1) * MAX_LEN);
     for (let len = 1; len <= MAX_LEN; len++) {
@@ -566,7 +636,7 @@
         );
         const ratio = (stepIdx + 1) / RAIN_STEPS;
         const smooth = ratio * ratio * (3 - 2 * ratio);
-        rainAlphaLut[base + b] = 0.035 + smooth * 0.165;
+        rainAlphaLut[base + b] = 0.035 + smooth * 0.17;
       }
     }
 
@@ -575,94 +645,10 @@
     let streamHeadY = new Float32Array(0);
     let streamSpeed = new Float32Array(0);
     let streamLen = new Uint8Array(0);
-    let streamIsDarkLead = new Uint8Array(0);
+    let streamIsRedLead = new Uint8Array(0);
     let streamBits = new Uint8Array(0);
 
-    // =========================================================================
-    // 2. "Thank you" WORD CONDENSATION DUST PARTICLES (Built from Binary Rain)
-    // =========================================================================
-    const WORD_DUST_COUNT = Math.max(460, Math.round(980 * gpuTier.recommendedParticleScale));
-    const wordDstNx = new Float32Array(WORD_DUST_COUNT);
-    const wordDstNy = new Float32Array(WORD_DUST_COUNT);
-    const wordSeed = new Float32Array(WORD_DUST_COUNT);
-    const wordBit = new Uint8Array(WORD_DUST_COUNT);
-    const wordDark = new Uint8Array(WORD_DUST_COUNT);
-
-    function sampleThankYouWord(): void {
-      const off = document.createElement('canvas');
-      const sw = 720;
-      const sh = 190;
-      off.width = sw;
-      off.height = sh;
-      const octx = off.getContext('2d');
-      if (!octx) return;
-
-      octx.clearRect(0, 0, sw, sh);
-      octx.fillStyle = '#ffffff';
-      octx.textAlign = 'left';
-      octx.textBaseline = 'middle';
-      octx.font = '700 132px "Fraunces", Georgia, serif';
-      octx.fillText('Thank you', 16, sh * 0.54);
-
-      const data = octx.getImageData(0, 0, sw, sh).data;
-      const pts: Array<{ nx: number; ny: number }> = [];
-      for (let y = 0; y < sh; y += 2) {
-        for (let x = 0; x < sw; x += 2) {
-          if (data[(y * sw + x) * 4 + 3] > 110) {
-            pts.push({ nx: x / sw, ny: y / sh });
-          }
-        }
-      }
-
-      if (pts.length === 0) {
-        for (let i = 0; i < WORD_DUST_COUNT; i++) {
-          wordDstNx[i] = (i % 50) / 50;
-          wordDstNy[i] = Math.floor(i / 50) / (WORD_DUST_COUNT / 50);
-          wordSeed[i] = ((i + 13) * 0.61803398875) % 1;
-          wordBit[i] = i & 1;
-          wordDark[i] = i % 7 === 0 ? 1 : 0;
-        }
-        return;
-      }
-
-      for (let i = 0; i < WORD_DUST_COUNT; i++) {
-        const idx = Math.min(pts.length - 1, Math.floor((i / WORD_DUST_COUNT) * pts.length));
-        const p = pts[idx];
-        wordDstNx[i] = p.nx;
-        wordDstNy[i] = p.ny;
-        wordSeed[i] = ((i + 17) * 0.61803398875) % 1;
-        wordBit[i] = i & 1;
-        wordDark[i] = i % 9 === 0 ? 1 : 0;
-      }
-    }
-
-    // =========================================================================
-    // 3. INTERACTIVE AMBIENT BINARY DUST (Global Mouse Force Vector + Cursor Swirl)
-    // =========================================================================
-    const AMBIENT_DUST_COUNT = Math.max(88, Math.round(156 * gpuTier.recommendedParticleScale));
-    const ambHomeNx = new Float32Array(AMBIENT_DUST_COUNT);
-    const ambHomeNy = new Float32Array(AMBIENT_DUST_COUNT);
-    const ambDispX = new Float32Array(AMBIENT_DUST_COUNT);
-    const ambDispY = new Float32Array(AMBIENT_DUST_COUNT);
-    const ambVelX = new Float32Array(AMBIENT_DUST_COUNT);
-    const ambVelY = new Float32Array(AMBIENT_DUST_COUNT);
-    const ambPhase = new Float32Array(AMBIENT_DUST_COUNT);
-    const ambBit = new Uint8Array(AMBIENT_DUST_COUNT);
-    const ambDark = new Uint8Array(AMBIENT_DUST_COUNT);
-
-    for (let i = 0; i < AMBIENT_DUST_COUNT; i++) {
-      const s1 = ((i * 73.137 + 19.7) % 1000) / 1000;
-      const s2 = ((i * 197.41 + 43.3) % 1000) / 1000;
-      ambHomeNx[i] = 0.03 + s1 * 0.94;
-      ambHomeNy[i] = 0.04 + s2 * 0.92;
-      ambPhase[i] = ((i * 0.61803398875) % 1) * Math.PI * 2;
-      ambBit[i] = i & 1;
-      ambDark[i] = i % 5 === 0 ? 1 : 0;
-    }
-
-    // =========================================================================
-    // 4. LINK INTERACTION MICRO-BURST POOL (ZERO GC Ring Buffer)
-    // =========================================================================
+    // 2. Link Hover / Click Micro-Burst Pool (ZERO GC Ring Buffer)
     const BURST_POOL = 96;
     const burstX = new Float32Array(BURST_POOL);
     const burstY = new Float32Array(BURST_POOL);
@@ -671,6 +657,7 @@
     const burstLife = new Float32Array(BURST_POOL);
     const burstMaxLife = new Float32Array(BURST_POOL);
     const burstBit = new Uint8Array(BURST_POOL);
+    const burstRed = new Uint8Array(BURST_POOL);
     let burstCursor = 0;
 
     triggerLinkDustBurst = (clientX: number, clientY: number, count = 16) => {
@@ -682,41 +669,124 @@
         const idx = burstCursor;
         burstCursor = (burstCursor + 1) % BURST_POOL;
         const angle = (k / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.6;
-        const speed = 38 + Math.random() * 110;
+        const speed = 42 + Math.random() * 115;
         burstX[idx] = lx + (Math.random() - 0.5) * 28;
-        burstY[idx] = ly + (Math.random() - 0.5) * 12;
+        burstY[idx] = ly + (Math.random() - 0.5) * 14;
         burstVx[idx] = Math.cos(angle) * speed;
         burstVy[idx] = Math.sin(angle) * speed - 18;
-        const maxL = 0.55 + Math.random() * 0.45;
+        const maxL = 0.55 + Math.random() * 0.42;
         burstLife[idx] = maxL;
         burstMaxLife[idx] = maxL;
         burstBit[idx] = Math.random() > 0.5 ? 1 : 0;
+        burstRed[idx] = k % 2 === 0 ? 1 : 0;
       }
     };
 
-    // Global mouse force vector state
-    let pointerInside = false;
-    let pointerPresence = 0;
-    let pointerX = width * 0.5;
-    let pointerY = height * 0.5;
-    let prevPointerX = pointerX;
-    let prevPointerY = pointerY;
-    let hasPrevPointer = false;
-    let lastMoveMs = 0;
-    let rawForceX = 0;
-    let rawForceY = 0;
-    let smoothForceX = 0;
-    let smoothForceY = 0;
-    let smoothSpeed = 0;
-    let swirlSign = 1;
+    function rebuildBinaryAdMonogram(): void {
+      if (!stage) return;
+      const stageRect = stage.getBoundingClientRect();
+      const anchorRect = anchorEl?.getBoundingClientRect();
+
+      let availLeft = 0;
+      let availTop = Math.min(92, height * 0.14);
+      let availW = width;
+      let availH = Math.max(180, height - availTop);
+
+      if (anchorRect && anchorRect.width > 40 && anchorRect.height > 40 && stageRect.width > 0) {
+        availLeft = anchorRect.left - stageRect.left;
+        availTop = anchorRect.top - stageRect.top;
+        availW = anchorRect.width;
+        availH = anchorRect.height;
+      }
+
+      // Match preserveAspectRatio="xMidYMax meet" so 'ad' sits monumental & flush to bottom edge
+      const scale = Math.min(availW / AD_VB_W, availH / AD_VB_H);
+      const drawW = AD_VB_W * scale;
+      const drawH = AD_VB_H * scale;
+      const offsetX = availLeft + (availW - drawW) * 0.5;
+      const offsetY = availTop + (availH - drawH);
+
+      // Compute crisp monospace matrix step so every '1' and '0' is sharp across cover screens, car displays & 4K TVs
+      const targetCells = gpuTier.isLowEndMobile
+        ? 1450
+        : width >= 2200
+          ? 3900
+          : gpuTier.isCoarsePointer
+            ? 2200
+            : 3400;
+      const fillRatio = 0.47;
+      const colAspect = 0.58;
+      const rowAspect = 0.76;
+      const rawStep = Math.sqrt((drawW * drawH * fillRatio) / (targetCells * colAspect * rowAspect));
+      const minStep = width < 380 ? 9.5 : width < 640 || height < 520 ? 11.5 : width >= 2200 ? 18.5 : 15.5;
+      const maxStep = width < 380 ? 14.0 : width < 640 || height < 520 ? 16.5 : width >= 2200 ? 30.0 : 22.0;
+      const cellSize = Math.max(minStep, Math.min(maxStep, rawStep));
+
+      const stepX = cellSize * colAspect;
+      const stepY = cellSize * rowAspect;
+      monoGlyphSize = cellSize * 0.98;
+
+      const cols = Math.max(1, Math.floor(drawW / stepX));
+      const rows = Math.max(1, Math.floor(drawH / stepY));
+      const padX = (drawW - cols * stepX) * 0.5;
+      const padY = (drawH - rows * stepY) * 0.5;
+
+      const maxCap = Math.min(4200, cols * rows);
+      const tmpX = new Float32Array(maxCap);
+      const tmpY = new Float32Array(maxCap);
+      const tmpBit = new Uint8Array(maxCap);
+      const tmpEdge = new Uint8Array(maxCap);
+      const tmpPhase = new Float32Array(maxCap);
+      const tmpWave = new Float32Array(maxCap);
+
+      let count = 0;
+      for (let r = 0; r < rows; r++) {
+        const localY = padY + (r + 0.5) * stepY;
+        const my = Math.min(MASK_H - 1, Math.max(0, Math.floor((localY / drawH) * MASK_H)));
+        const rowOff = my * MASK_W;
+
+        for (let c = 0; c < cols; c++) {
+          if (count >= maxCap) break;
+          const localX = padX + (c + 0.5) * stepX;
+          const mx = Math.min(MASK_W - 1, Math.max(0, Math.floor((localX / drawW) * MASK_W)));
+          if (maskAlpha[rowOff + mx] === 0) continue;
+
+          // Edge detection on mask neighborhood to sharpen the 'a' and 'd' contour with crisp bits
+          const leftOut = mx > 0 ? maskAlpha[rowOff + mx - 1] === 0 : true;
+          const rightOut = mx < MASK_W - 1 ? maskAlpha[rowOff + mx + 1] === 0 : true;
+          const upOut = my > 0 ? maskAlpha[(my - 1) * MASK_W + mx] === 0 : true;
+          const downOut = my < MASK_H - 1 ? maskAlpha[(my + 1) * MASK_W + mx] === 0 : true;
+          const isEdge = leftOut || rightOut || upOut || downOut ? 1 : 0;
+
+          // Deterministic pseudo-random binary pattern (organic 0/1 mix, zero flat checkerboard)
+          const hash = ((c * 374761393 + r * 668265263) ^ (c * r * 1274126177)) >>> 0;
+          tmpX[count] = offsetX + localX;
+          tmpY[count] = offsetY + localY;
+          tmpBit[count] = (hash >> 7) & 1;
+          tmpEdge[count] = isEdge;
+          tmpPhase[count] = ((hash & 1023) / 1023) * Math.PI * 2;
+          tmpWave[count] = (localX / Math.max(1, drawW)) * 0.78 + (localY / Math.max(1, drawH)) * 0.22;
+          count++;
+        }
+      }
+
+      monoCount = count;
+      monoX = tmpX.subarray(0, count);
+      monoY = tmpY.subarray(0, count);
+      monoBit = tmpBit.subarray(0, count);
+      monoEdge = tmpEdge.subarray(0, count);
+      monoPhase = tmpPhase.subarray(0, count);
+      monoWavePos = tmpWave.subarray(0, count);
+      monoFlipCursor = 0;
+    }
 
     function initCanvasSize(): void {
       if (!canvas || !stage) return;
-      width = Math.max(320, stage.clientWidth || window.innerWidth);
-      height = Math.max(400, stage.clientHeight || window.innerHeight);
+      width = Math.max(260, stage.clientWidth || window.innerWidth);
+      height = Math.max(240, stage.clientHeight || window.innerHeight);
       mainGpu.resize(width, height, false);
 
-      const colSpacing = width < 768 ? 28 : 24;
+      const colSpacing = width < 768 ? 30 : 26;
       const numCols = Math.ceil(width / colSpacing);
       streamCount = numCols;
 
@@ -724,150 +794,42 @@
       streamHeadY = new Float32Array(streamCount);
       streamSpeed = new Float32Array(streamCount);
       streamLen = new Uint8Array(streamCount);
-      streamIsDarkLead = new Uint8Array(streamCount);
+      streamIsRedLead = new Uint8Array(streamCount);
       streamBits = new Uint8Array(streamCount * MAX_LEN);
 
       const speedScale = reducedMotion ? 0.3 : 1;
       for (let i = 0; i < numCols; i++) {
         streamX[i] = Math.round(i * colSpacing + colSpacing * 0.5);
-        const len = 8 + ((i * 5 + 3) % 9); // 8..16
+        const len = 7 + ((i * 5 + 3) % 8);
         const span = height + len * CELL_H;
         streamLen[i] = len;
         streamHeadY[i] = ((i * 113) % Math.max(1, span)) - len * CELL_H * 0.3;
-        streamSpeed[i] = (44 + ((i * 19) % 44)) * speedScale;
-        streamIsDarkLead[i] = i % 5 === 0 ? 1 : 0;
+        streamSpeed[i] = (44 + ((i * 19) % 42)) * speedScale;
+        streamIsRedLead[i] = i % 5 === 0 ? 1 : 0;
 
         const base = i * MAX_LEN;
         for (let b = 0; b < MAX_LEN; b++) {
           streamBits[base + b] = ((i * 7 + b * 13) & 1) as 0 | 1;
         }
       }
+
+      rebuildBinaryAdMonogram();
     }
 
     initCanvasSize();
-    sampleThankYouWord();
-    if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(() => {
-        sampleThankYouWord();
-      });
-    }
-
-    function updateStagePointerSample(clientX: number, clientY: number): void {
-      const now = performance.now();
-      const rect = stage.getBoundingClientRect();
-      const lx = clientX - rect.left;
-      const ly = clientY - rect.top;
-      pointerX = lx;
-      pointerY = ly;
-      pointerInside = true;
-
-      if (hasPrevPointer) {
-        const moveDt = Math.max(0.008, Math.min(0.08, (now - lastMoveMs) / 1000));
-        const vx = (lx - prevPointerX) / moveDt;
-        const vy = (ly - prevPointerY) / moveDt;
-        const mag = Math.hypot(vx, vy);
-        const cap = 1600;
-        const sc = mag > cap ? cap / mag : 1;
-        rawForceX = rawForceX * 0.35 + vx * sc * 0.65;
-        rawForceY = rawForceY * 0.35 + vy * sc * 0.65;
-        if (mag > 45) {
-          const targetSign = vx * 0.7 - vy * 0.3 >= 0 ? 1 : -1;
-          swirlSign += (targetSign - swirlSign) * 0.16;
-        }
-      }
-      prevPointerX = lx;
-      prevPointerY = ly;
-      hasPrevPointer = true;
-      lastMoveMs = now;
-    }
-
-    const onPointerMove = (e: PointerEvent) => {
-      if (e.pointerType === 'touch') return;
-      updateStagePointerSample(e.clientX, e.clientY);
-    };
-
-    const onPointerLeave = () => {
-      pointerInside = false;
-      hasPrevPointer = false;
-      rawForceX = 0;
-      rawForceY = 0;
-    };
-
-    const onStageTouchStart = (e: TouchEvent) => {
-      if (sayHiOpen || e.touches.length === 0) return;
-      hasPrevPointer = false;
-      updateStagePointerSample(e.touches[0].clientX, e.touches[0].clientY);
-    };
-
-    const onStageTouchMove = (e: TouchEvent) => {
-      if (sayHiOpen || e.touches.length === 0) return;
-      updateStagePointerSample(e.touches[0].clientX, e.touches[0].clientY);
-    };
-
-    const onStageTouchEnd = () => {
-      pointerInside = false;
-      hasPrevPointer = false;
-      rawForceX = 0;
-      rawForceY = 0;
-    };
-
-    stage.addEventListener('pointermove', onPointerMove, { passive: true });
-    stage.addEventListener('pointerleave', onPointerLeave, { passive: true });
-    stage.addEventListener('touchstart', onStageTouchStart, { passive: true });
-    stage.addEventListener('touchmove', onStageTouchMove, { passive: true });
-    stage.addEventListener('touchend', onStageTouchEnd, { passive: true });
-    stage.addEventListener('touchcancel', onStageTouchEnd, { passive: true });
 
     const resizeObserver = new ResizeObserver(() => {
       initCanvasSize();
     });
     resizeObserver.observe(stage);
-
-    let rafId = 0;
-    let syncTimerId = 0;
-    let disposed = false;
-    let isPaused = document.hidden;
-    let lastMs = performance.now();
-    let clock = 0;
-    let smoothBuild = 0;
-    let frameCounter = 0;
-    let flipCursor = 0;
-
-    const invCellH = 1 / CELL_H;
-    const dustSizePx = width < 640 ? 9.5 : 10.5;
-    const rainSizePx = width < 640 ? 10.5 : 11.5;
-
-    function afterDraw(cb: () => void): void {
-      if (disposed) return;
-      const gl = mainGpu.renderer.getContext() as WebGL2RenderingContext;
-      if (!gl || typeof gl.fenceSync !== 'function') {
-        syncTimerId = window.setTimeout(cb, 32);
-        return;
-      }
-      const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
-      gl.flush();
-      const poll = () => {
-        if (disposed) {
-          if (sync) gl.deleteSync(sync);
-          return;
-        }
-        const state = sync && gl.getSyncParameter(sync, gl.SYNC_STATUS);
-        if (state === gl.UNSIGNALED) {
-          syncTimerId = window.setTimeout(poll, 4);
-        } else {
-          if (sync) gl.deleteSync(sync);
-          cb();
-        }
-      };
-      syncTimerId = window.setTimeout(poll, 4);
+    if (anchorEl) {
+      resizeObserver.observe(anchorEl);
     }
 
-    // =========================================================================
-    // 5. MODAL BINARY DUST -> SOCIAL ICONS CONDENSATION ENGINE (ZERO GC)
-    // Streams 320 binary dust motes from the floating C++ editor into the 4 icons
-    // =========================================================================
-    const ICON_DUST_PER_SLOT = 80;
-    const ICON_DUST_TOTAL = ICON_DUST_PER_SLOT * 4;
+    // 3. Modal Binary Dust -> Pop-Out Icons Condensation Engine (6 slots, ZERO GC)
+    const ICON_SLOTS = CONNECT_CHANNELS.length;
+    const ICON_DUST_PER_SLOT = 76;
+    const ICON_DUST_TOTAL = ICON_DUST_PER_SLOT * ICON_SLOTS;
     const iconDustStartX = new Float32Array(ICON_DUST_TOTAL);
     const iconDustStartY = new Float32Array(ICON_DUST_TOTAL);
     const iconDustCtrlX = new Float32Array(ICON_DUST_TOTAL);
@@ -899,14 +861,14 @@
         sayHiTerminalEl?.getBoundingClientRect() ?? sayHiEditorEl?.getBoundingClientRect();
       const originCenterX = termRect ? termRect.left + termRect.width * 0.5 : vw * 0.5;
       const originY = termRect ? termRect.bottom - 8 : vh * 0.5;
-      const originSpreadW = termRect ? termRect.width * 0.72 : 280;
+      const originSpreadW = termRect ? termRect.width * 0.78 : 300;
 
-      for (let slot = 0; slot < 4; slot++) {
+      for (let slot = 0; slot < ICON_SLOTS; slot++) {
         const iconEl = sayHiIconEls[slot];
         const iRect = iconEl?.getBoundingClientRect();
-        const cx = iRect ? iRect.left + iRect.width * 0.5 : vw * 0.5 + (slot - 1.5) * 76;
+        const cx = iRect ? iRect.left + iRect.width * 0.5 : vw * 0.5 + (slot - 2.5) * 66;
         const cy = iRect ? iRect.top + iRect.height * 0.5 : originY + 64;
-        const slotBaseDelay = slot * 0.12;
+        const slotBaseDelay = slot * 0.09;
 
         for (let k = 0; k < ICON_DUST_PER_SLOT; k++) {
           const idx = slot * ICON_DUST_PER_SLOT + k;
@@ -919,9 +881,9 @@
           const dx = cx + Math.cos(angle) * ringR;
           const dy = cy + Math.sin(angle) * ringR;
 
-          const swirlSignDir = (idx & 1) === 0 ? 1 : -1;
-          const midX = (sx + dx) * 0.5 + swirlSignDir * (26 + seed * 54);
-          const midY = (sy + dy) * 0.5 - 12 + (seed - 0.5) * 44;
+          const swirlDir = (idx & 1) === 0 ? 1 : -1;
+          const midX = (sx + dx) * 0.5 + swirlDir * (24 + seed * 52);
+          const midY = (sy + dy) * 0.5 - 12 + (seed - 0.5) * 42;
 
           iconDustStartX[idx] = sx;
           iconDustStartY[idx] = sy;
@@ -929,7 +891,7 @@
           iconDustCtrlY[idx] = midY;
           iconDustDstX[idx] = dx;
           iconDustDstY[idx] = dy;
-          iconDustDelay[idx] = slotBaseDelay + seed * 0.16;
+          iconDustDelay[idx] = slotBaseDelay + seed * 0.14;
           iconDustBit[idx] = idx & 1;
           iconDustCrimson[idx] = idx % 3 === 0 ? 1 : 0;
         }
@@ -958,12 +920,51 @@
         mSparkLife[idx] = ml;
         mSparkMax[idx] = ml;
         mSparkBit[idx] = Math.random() > 0.5 ? 1 : 0;
-        mSparkRed[idx] = k % 3 === 0 ? 1 : 0;
+        mSparkRed[idx] = k % 2 === 0 ? 1 : 0;
       }
     };
 
+    let rafId = 0;
+    let syncTimerId = 0;
+    let disposed = false;
+    let isPaused = document.hidden;
+    let lastMs = performance.now();
+    let clock = 0;
+    let smoothBuild = 0;
+    let frameCounter = 0;
+    let flipCursor = 0;
+
+    const invCellH = 1 / CELL_H;
+    const dustSizePx = width < 640 ? 9.5 : 10.5;
+    const rainSizePx = width < 640 ? 10.2 : 11.2;
+
+    function afterDraw(cb: () => void): void {
+      if (disposed) return;
+      const gl = mainGpu.renderer.getContext() as WebGL2RenderingContext;
+      if (!gl || typeof gl.fenceSync !== 'function') {
+        syncTimerId = window.setTimeout(cb, 32);
+        return;
+      }
+      const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+      gl.flush();
+      const poll = () => {
+        if (disposed) {
+          if (sync) gl.deleteSync(sync);
+          return;
+        }
+        const state = sync && gl.getSyncParameter(sync, gl.SYNC_STATUS);
+        if (state === gl.UNSIGNALED) {
+          syncTimerId = window.setTimeout(poll, 4);
+        } else {
+          if (sync) gl.deleteSync(sync);
+          cb();
+        }
+      };
+      syncTimerId = window.setTimeout(poll, 4);
+    }
+
     const renderLoop = (nowMs: number) => {
-      if (isPaused) {
+      if (isPaused || disposed) {
         rafId = 0;
         return;
       }
@@ -975,16 +976,16 @@
 
       smoothBuild += (buildProgress - smoothBuild) * (1 - Math.exp(-11 * dt));
 
-      // Advance live C++ typing animation when the Say Hi floating editor is open
-      if (sayHiOpen && cppTypedChars < TOTAL_SAY_HI_CHARS) {
-        cppTypedChars = Math.min(TOTAL_SAY_HI_CHARS, cppTypedChars + dt * 145);
+      // Advance live C++ typing animation when the Connect modal is open
+      if (connectModalOpen && cppTypedChars < TOTAL_SAY_HI_CHARS) {
+        cppTypedChars = Math.min(TOTAL_SAY_HI_CHARS, cppTypedChars + dt * 155);
         if (cppTypedChars >= TOTAL_SAY_HI_CHARS && !iconsReady) {
           revealIconsFromBinaryDust();
         }
       }
 
-      // Render GPU InstancedMesh modal binary dust condensation + icon hover sparks when Say Hi overlay is active
-      if (sayHiOpen && modalGpuRenderer) {
+      // Render GPU InstancedMesh modal binary dust -> icon pop-out condensation
+      if (connectModalOpen && modalGpuRenderer) {
         const mw = Math.max(320, window.innerWidth);
         const mh = Math.max(320, window.innerHeight);
         modalGpuRenderer.resize(mw, mh, false);
@@ -994,7 +995,7 @@
 
         if (iconDustActive) {
           iconDustElapsed += dt;
-          const travelDur = 0.64;
+          const travelDur = 0.62;
           let anyAlive = false;
 
           for (let i = 0; i < ICON_DUST_TOTAL; i++) {
@@ -1029,9 +1030,9 @@
               rawT < 0.85 && (i + mTick) % 9 === 0 ? iconDustBit[i] ^ 1 : iconDustBit[i]
             ) as 0 | 1;
             if (iconDustCrimson[i]) {
-              modalGpuRenderer.push(px, py, 11.2, bit, CRIMSON_R, CRIMSON_G, CRIMSON_B, alpha);
+              modalGpuRenderer.push(px, py, 11.2, bit, RED_R, RED_G, RED_B, alpha);
             } else {
-              modalGpuRenderer.push(px, py, 11.2, bit, CREAM_R, CREAM_G, CREAM_B, alpha);
+              modalGpuRenderer.push(px, py, 11.2, bit, WHITE_R, WHITE_G, WHITE_B, alpha);
             }
           }
 
@@ -1040,7 +1041,7 @@
           }
         }
 
-        // Icon hover / click binary dust sparks inside the Say Hi overlay
+        // Modal icon hover / click sparks
         for (let i = 0; i < MODAL_SPARK_POOL; i++) {
           if (mSparkLife[i] <= 0) continue;
           mSparkLife[i] -= dt;
@@ -1053,81 +1054,33 @@
           if (alpha <= 0.03) continue;
           const bit = (mSparkBit[i] & 1) as 0 | 1;
           if (mSparkRed[i]) {
-            modalGpuRenderer.push(
-              mSparkX[i],
-              mSparkY[i],
-              10.5,
-              bit,
-              CRIMSON_R,
-              CRIMSON_G,
-              CRIMSON_B,
-              alpha
-            );
+            modalGpuRenderer.push(mSparkX[i], mSparkY[i], 10.5, bit, RED_R, RED_G, RED_B, alpha);
           } else {
-            modalGpuRenderer.push(
-              mSparkX[i],
-              mSparkY[i],
-              10.5,
-              bit,
-              CREAM_R,
-              CREAM_G,
-              CREAM_B,
-              alpha
-            );
+            modalGpuRenderer.push(mSparkX[i], mSparkY[i], 10.5, bit, WHITE_R, WHITE_G, WHITE_B, alpha);
           }
         }
 
         modalGpuRenderer.render();
       }
 
-      // Skip heavy background WebGL draw work when Thank You section is completely scrolled out above
-      if (smoothBuild < 0.008 && buildProgress < 0.008) {
+      // Skip background rain work when scrolled above the finale or when 3D cluster modal covers screen
+      if ((smoothBuild < 0.008 && buildProgress < 0.008) || clusterModalOpen) {
         mainGpu.clear();
         rafId = requestAnimationFrame(renderLoop);
         return;
       }
 
-      // Smooth global mouse force vector
-      pointerPresence += ((pointerInside ? 1 : 0) - pointerPresence) * (1 - Math.exp(-5.0 * dt));
-      const rawDecay = Math.exp(-7.2 * dt);
-      rawForceX *= rawDecay;
-      rawForceY *= rawDecay;
-      const fLerp = 1 - Math.exp(-10.0 * dt);
-      smoothForceX += (rawForceX - smoothForceX) * fLerp;
-      smoothForceY += (rawForceY - smoothForceY) * fLerp;
-      const curSpd = Math.min(1.8, Math.hypot(smoothForceX, smoothForceY) / 680);
-      smoothSpeed += (curSpd - smoothSpeed) * (1 - Math.exp(-7.0 * dt));
-
       mainGpu.beginFrame();
+      const rainAlphaEnv = Math.min(1, smoothBuild * 1.35);
 
-      const rainAlphaEnv = Math.min(1, smoothBuild * 1.4);
-      const tick = Math.floor(clock * 8);
-
-      // Gently flip a few stream bits each odd frame
       if ((frameCounter & 1) === 0 && streamBits.length > 0) {
-        for (let f = 0; f < 5; f++) {
+        for (let f = 0; f < 4; f++) {
           flipCursor = (flipCursor + 31) % streamBits.length;
           streamBits[flipCursor] ^= 1;
         }
       }
 
-      // Soft exclusion band around the centered links so link copy stays ultra-crisp
-      let linkLeft = width * 0.36;
-      let linkRight = width * 0.64;
-      let linkTop = height * 0.66;
-      let linkBottom = height * 0.89;
-      if (linksContainerEl) {
-        const sRect = stage.getBoundingClientRect();
-        const lRect = linksContainerEl.getBoundingClientRect();
-        if (lRect.width > 0 && lRect.height > 0) {
-          linkLeft = lRect.left - sRect.left - 34;
-          linkRight = lRect.right - sRect.left + 34;
-          linkTop = lRect.top - sRect.top - 18;
-          linkBottom = lRect.bottom - sRect.top + 18;
-        }
-      }
-
-      // 1) Draw Vermilion Binary Rain via GPU InstancedMesh
+      // Subtle black/white/red binary rain in the obsidian background
       const maxY = height + CELL_H;
       if (rainAlphaEnv > 0.02) {
         for (let i = 0; i < streamCount; i++) {
@@ -1147,171 +1100,84 @@
           const cx = streamX[i];
           const bitOffset = i * MAX_LEN;
           const lutBase = len * MAX_LEN;
-          const darkLead = streamIsDarkLead[i] === 1;
+          const redLead = streamIsRedLead[i] === 1;
 
           for (let b = bStart; b <= bEnd; b++) {
             const bitY = headY - b * CELL_H;
-            if (cx > linkLeft && cx < linkRight && bitY > linkTop && bitY < linkBottom) {
-              continue;
-            }
             const bitVal = (streamBits[bitOffset + b] & 1) as 0 | 1;
             if (b === 0) {
-              if (darkLead) {
-                mainGpu.push(cx, bitY, rainSizePx, bitVal, DARK_R, DARK_G, DARK_B, 0.36 * rainAlphaEnv);
+              if (redLead) {
+                mainGpu.push(cx, bitY, rainSizePx, bitVal, RED_R, RED_G, RED_B, 0.44 * rainAlphaEnv);
               } else {
-                mainGpu.push(cx, bitY, rainSizePx, bitVal, LEAD_R, LEAD_G, LEAD_B, 0.42 * rainAlphaEnv);
+                mainGpu.push(cx, bitY, rainSizePx, bitVal, INK_R, INK_G, INK_B, 0.28 * rainAlphaEnv);
               }
             } else {
-              const alpha = rainAlphaLut[lutBase + b] * rainAlphaEnv;
-              mainGpu.push(cx, bitY, rainSizePx, bitVal, CREAM_R, CREAM_G, CREAM_B, alpha);
+              const alpha = rainAlphaLut[lutBase + b] * 0.72 * rainAlphaEnv;
+              mainGpu.push(cx, bitY, rainSizePx, bitVal, MUTED_R, MUTED_G, MUTED_B, alpha);
             }
           }
         }
       }
 
-      // 2) Binary Dust Condensation of the static "Thank you" wordmark (active while entering 0.02..0.96)
-      if (smoothBuild > 0.02 && smoothBuild < 0.96) {
-        const cloudFadeOut = smoothBuild > 0.62 ? Math.max(0, 1 - (smoothBuild - 0.62) / 0.34) : 1;
-        if (cloudFadeOut > 0.015) {
-          let wordLeft = width * 0.08;
-          let wordW = width * 0.84;
-          let wordH = Math.min(height * 0.34, Math.max(100, width * 0.18));
-          let wordTop = height * 0.22;
-
-          if (anchorEl) {
-            const sRect = stage.getBoundingClientRect();
-            const aRect = anchorEl.getBoundingClientRect();
-            if (aRect.width > 40 && aRect.height > 24) {
-              wordLeft = aRect.left - sRect.left;
-              wordTop = aRect.top - sRect.top;
-              wordW = aRect.width;
-              wordH = aRect.height;
-            }
-          }
-          const colStep = 24;
-
-          for (let i = 0; i < WORD_DUST_COUNT; i++) {
-            const seed = wordSeed[i];
-            const nx = wordDstNx[i];
-            const ny = wordDstNy[i];
-            const delay = nx * 0.18 + seed * 0.16;
-            const localT = Math.max(0, Math.min(1, (smoothBuild - delay) / (0.82 - delay)));
-            if (localT <= 0.006) continue;
-
-            const ease = quinticSmooth(localT);
-            const dstX = wordLeft + nx * wordW;
-            const dstY = wordTop + ny * wordH;
-
-            const srcX = Math.round((dstX + (seed - 0.5) * 90) / colStep) * colStep + colStep * 0.5;
-            const srcY = dstY - (140 + seed * 220);
-            const swirl = Math.sin(ease * Math.PI) * (seed - 0.5) * 42;
-
-            const curX = srcX + (dstX - srcX) * ease + swirl;
-            const curY = srcY + (dstY - srcY) * ease;
-
-            const bitVal = (
-              localT < 0.82 && (i + tick) % 9 === 0 ? wordBit[i] ^ 1 : wordBit[i]
-            ) as 0 | 1;
-            const alpha = Math.min(1, localT / 0.2) * cloudFadeOut * 0.92;
-            if (alpha <= 0.025) continue;
-            if (wordDark[i]) {
-              mainGpu.push(curX, curY, dustSizePx, bitVal, RUBY_R, RUBY_G, RUBY_B, alpha * 0.72);
-            } else {
-              mainGpu.push(curX, curY, dustSizePx, bitVal, CREAM_R, CREAM_G, CREAM_B, alpha);
-            }
+      // Monumental "ad" Monogram constructed entirely from living binary 1s and 0s
+      const monoReveal = Math.max(0, Math.min(1, (smoothBuild - 0.18) / 0.56));
+      if (monoReveal > 0.01 && monoCount > 0) {
+        // Gently flip a few bits across the 'ad' matrix each 3 frames so the binary feels alive
+        if (!reducedMotion && frameCounter % 3 === 0) {
+          for (let f = 0; f < 7; f++) {
+            monoFlipCursor = (monoFlipCursor + 137) % monoCount;
+            monoBit[monoFlipCursor] ^= 1;
           }
         }
-      }
 
-      // 3) Interactive Ambient Binary Dust Motes (Swirl around cursor via Global Force Vector)
-      if (rainAlphaEnv > 0.05) {
-        const swirlRadius = 185;
-        const invTwoSigmaSq = 1 / (2 * swirlRadius * swirlRadius);
-        const kSpring = 3.2;
-        const damp = Math.exp(-3.8 * dt);
-        const maxDisp = 115;
-        const spin = swirlSign >= 0 ? Math.max(0.55, swirlSign) : Math.min(-0.55, swirlSign);
-        const swirlGain = pointerPresence * (165 + smoothSpeed * 420);
-        const globalGain = 0.24 * pointerPresence;
+        const sweepPos = ((clock * 0.22) % 1.45) - 0.22;
+        const settleOffset = (1 - monoReveal) * 22;
 
-        for (let i = 0; i < AMBIENT_DUST_COUNT; i++) {
-          const ph = ambPhase[i];
-          const homeX = ambHomeNx[i] * width + Math.cos(clock * 0.42 + ph) * 14;
-          const homeY = ambHomeNy[i] * height + Math.sin(clock * 0.55 + ph * 1.3) * 12;
+        for (let i = 0; i < monoCount; i++) {
+          const phase = monoPhase[i];
+          const wPos = monoWavePos[i];
+          // Staggered diagonal reveal as user scrolls into the finale
+          const localRev = Math.max(0, Math.min(1, (monoReveal * 1.28 - wPos * 0.28)));
+          if (localRev <= 0.02) continue;
 
-          let dx = ambDispX[i];
-          let dy = ambDispY[i];
-          let vx = ambVelX[i];
-          let vy = ambVelY[i];
+          const bitVal = (monoBit[i] & 1) as 0 | 1;
+          const isEdge = monoEdge[i] === 1;
+          const shimmer = 0.5 + 0.5 * Math.sin(clock * 1.9 + phase);
 
-          let ax = -dx * kSpring;
-          let ay = -dy * kSpring;
-          let boost = 0;
+          // Crisp obsidian ink binary glint along slow diagonal wave on pure white
+          const distWave = Math.abs(wPos - sweepPos);
+          const isInkGlint =
+            !reducedMotion && distWave < 0.045 && ((i + Math.floor(clock * 3)) % 11 === 0);
 
-          if (pointerPresence > 0.003 && !reducedMotion) {
-            const curX = homeX + dx;
-            const curY = homeY + dy;
-            const rx = curX - pointerX;
-            const ry = curY - pointerY;
-            const distSq = rx * rx + ry * ry;
-            const dist = Math.sqrt(distSq) + 0.001;
-            const prox = Math.exp(-distSq * invTwoSigmaSq);
-
-            const gWeight = globalGain * (0.22 + 0.78 * prox);
-            ax += smoothForceX * gWeight;
-            ay += smoothForceY * gWeight;
-
-            const invD = 1 / dist;
-            const tx = -ry * invD * spin;
-            const ty = rx * invD * spin;
-            const sAccel = prox * swirlGain;
-            ax += tx * sAccel;
-            ay += ty * sAccel;
-
-            if (dist < 62) {
-              const push = (62 - dist) * 5.2 * prox * pointerPresence;
-              ax += rx * invD * push;
-              ay += ry * invD * push;
-            }
-            boost = prox * pointerPresence * (0.28 + smoothSpeed * 0.42);
-          }
-
-          vx = (vx + ax * dt) * damp;
-          vy = (vy + ay * dt) * damp;
-          dx += vx * dt;
-          dy += vy * dt;
-
-          const magSq = dx * dx + dy * dy;
-          if (magSq > maxDisp * maxDisp) {
-            const s = maxDisp / Math.sqrt(magSq);
-            dx *= s;
-            dy *= s;
-            vx *= 0.72;
-            vy *= 0.72;
-          }
-
-          ambDispX[i] = dx;
-          ambDispY[i] = dy;
-          ambVelX[i] = vx;
-          ambVelY[i] = vy;
-
-          const px = homeX + dx;
-          const py = homeY + dy;
-          if (px > linkLeft && px < linkRight && py > linkTop && py < linkBottom) continue;
-
-          const twinkle = 0.55 + 0.45 * Math.sin(clock * 1.8 + ph);
-          const alpha = rainAlphaEnv * Math.min(0.88, 0.16 + twinkle * 0.24 + boost);
-          if (alpha <= 0.025) continue;
-          const bitVal = ((i + tick) % 31 === 0 ? ambBit[i] ^ 1 : ambBit[i]) as 0 | 1;
-          if (ambDark[i]) {
-            mainGpu.push(px, py, dustSizePx * 0.96, bitVal, RUBY_R, RUBY_G, RUBY_B, alpha * 0.72);
+          const py = monoY[i] + settleOffset * (1 - localRev);
+          if (isInkGlint) {
+            mainGpu.push(
+              monoX[i],
+              py,
+              monoGlyphSize,
+              bitVal,
+              INK_R,
+              INK_G,
+              INK_B,
+              0.92 * localRev
+            );
           } else {
-            mainGpu.push(px, py, dustSizePx * 0.96, bitVal, CREAM_R, CREAM_G, CREAM_B, alpha);
+            const baseAlpha = isEdge ? 0.96 + shimmer * 0.04 : 0.78 + shimmer * 0.2;
+            mainGpu.push(
+              monoX[i],
+              py,
+              monoGlyphSize,
+              bitVal,
+              RED_R,
+              RED_G,
+              RED_B,
+              baseAlpha * localRev
+            );
           }
         }
       }
 
-      // 4) Micro-burst binary dust on link hover/click
+      // Hover/click binary bursts around the CONNECT button
       for (let i = 0; i < BURST_POOL; i++) {
         if (burstLife[i] <= 0) continue;
         burstLife[i] -= dt;
@@ -1321,18 +1187,13 @@
         burstX[i] += burstVx[i] * dt;
         burstY[i] += burstVy[i] * dt;
         const ratio = Math.max(0, burstLife[i] / Math.max(0.01, burstMaxLife[i]));
-        const alpha = ratio * 0.85;
+        const alpha = ratio * 0.88;
         if (alpha <= 0.025) continue;
-        mainGpu.push(
-          burstX[i],
-          burstY[i],
-          dustSizePx,
-          (burstBit[i] & 1) as 0 | 1,
-          CREAM_R,
-          CREAM_G,
-          CREAM_B,
-          alpha
-        );
+        if (burstRed[i]) {
+          mainGpu.push(burstX[i], burstY[i], dustSizePx, (burstBit[i] & 1) as 0 | 1, RED_R, RED_G, RED_B, alpha);
+        } else {
+          mainGpu.push(burstX[i], burstY[i], dustSizePx, (burstBit[i] & 1) as 0 | 1, INK_R, INK_G, INK_B, alpha);
+        }
       }
 
       mainGpu.render();
@@ -1360,8 +1221,8 @@
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && sayHiOpen) {
-        closeSayHiModal();
+      if (e.key === 'Escape' && connectModalOpen) {
+        closeConnectModal();
       }
     };
 
@@ -1379,12 +1240,6 @@
       sayHiIconsTl?.kill();
       window.clearTimeout(cvResetTimer);
       window.clearTimeout(copyMailTimer);
-      stage.removeEventListener('pointermove', onPointerMove);
-      stage.removeEventListener('pointerleave', onPointerLeave);
-      stage.removeEventListener('touchstart', onStageTouchStart);
-      stage.removeEventListener('touchmove', onStageTouchMove);
-      stage.removeEventListener('touchend', onStageTouchEnd);
-      stage.removeEventListener('touchcancel', onStageTouchEnd);
       document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('keydown', onKeyDown);
       resizeObserver.disconnect();
@@ -1397,141 +1252,68 @@
   });
 </script>
 
+<!-- ====================================================================== -->
+<!-- MONUMENTAL WHITE, BLACK & RED FINALE POSTER                            -->
+<!-- Single top-left CONNECT button + top-right copyright + binary red AD   -->
+<!-- ====================================================================== -->
 <div
   bind:this={stageEl}
-  class="relative flex h-full w-full flex-col justify-between overflow-hidden bg-[#DF432B] text-[#F5F3EA]"
+  class="relative flex h-full w-full flex-col justify-between overflow-hidden bg-[#FFFFFF] text-[#111110]"
 >
-  <!-- Integrated Vermilion Binary Rain + Condensation Dust + Interactive Swirl Canvas -->
+  <!-- Subtle Ink & Red Binary Rain + Monumental Binary AD Canvas on Pure White -->
   <canvas
     bind:this={canvasEl}
     aria-hidden="true"
     class="pointer-events-none absolute inset-0 z-0 block h-full w-full will-change-transform"
   ></canvas>
 
-  <!-- Subtle top atmospheric gradient vignette for depth without clutter -->
-  <div
-    aria-hidden="true"
-    class="pointer-events-none absolute inset-x-0 top-0 z-[1] h-28 bg-gradient-to-b from-[#C7351F]/35 to-transparent"
-  ></div>
+  <!-- TOP HEADER BAR: Single Clean CONNECT Button (Left) + Bold Copyright (Right) -->
+  <header
+    class="relative z-20 flex w-full items-start justify-between gap-3 px-[max(1rem,env(safe-area-inset-left))] pt-[max(1rem,env(safe-area-inset-top))] pb-2 sm:px-[max(2rem,env(safe-area-inset-left))] sm:pt-[max(1.5rem,env(safe-area-inset-top))] sm:pb-3"
+    style="opacity: {headerOpacity.toFixed(3)}; transform: translate3d(0, {((1 - headerOpacity) * -12).toFixed(1)}px, 0);"
+  >
+    <!-- Clean Minimal CONNECT Button (Pure White / Black / #FF261B Red) -->
+    <button
+      bind:this={connectButtonEl}
+      type="button"
+      onpointerenter={handleButtonHover}
+      onclick={openConnectModal}
+      class="inline-flex min-h-[46px] shrink-0 cursor-pointer items-center justify-center whitespace-nowrap rounded-lg border border-[#141412]/20 bg-white px-5 py-2.5 font-display text-[12.5px] font-bold tracking-[0.15em] text-[#111110] uppercase shadow-[0_10px_28px_rgba(17,17,16,0.08)] transition-[background-color,border-color,color,transform] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:border-[#FF261B] hover:bg-[#FF261B] hover:text-white active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#FF261B] sm:min-h-[48px] sm:px-7 sm:py-3 sm:text-[14px]"
+    >
+      CONNECT
+    </button>
 
-  <!-- STATIC GIANT "Thank you" EDITORIAL WORDMARK (Crystallizes from Binary Dust, stays cleanly static) -->
-  <div class="relative z-10 flex flex-1 flex-col items-center justify-center px-4 pt-10 sm:px-8 sm:pt-14">
-    <h2
+    <!-- Bold Uppercase Copyright Block (Top-Right) -->
+    <div class="text-right font-display text-[10px] leading-[1.2] font-extrabold tracking-[0.04em] text-[#111110] uppercase select-none sm:text-[13px]">
+      <div>©2026 ARYAN DAS</div>
+      <div>ALL RIGHTS RESERVED</div>
+    </div>
+  </header>
+
+  <!-- MONUMENTAL BINARY (1 & 0) "ad" LAYOUT ANCHOR (Rendered directly on GPU InstancedMesh canvas) -->
+  <div class="pointer-events-none relative z-10 flex min-h-0 flex-1 w-full items-end justify-center overflow-hidden">
+    <div
       bind:this={anchorEl}
-      class="thankyou-wordmark text-center whitespace-nowrap select-none"
-      style="opacity: {titleSolidOpacity.toFixed(3)}; transform: translate3d(0, {((1 - titleSolidOpacity) * 14).toFixed(1)}px, 0);"
-    >
-      Thank you
-    </h2>
-  </div>
-
-  <!-- CENTERED MINIMALIST ACTION LINKS + QUIET COPYRIGHT -->
-  <div class="relative z-10 flex flex-col items-center px-6 pb-8 sm:pb-10">
-    <nav
-      bind:this={linksContainerEl}
-      aria-label="Connect and resume links"
-      class="mb-12 flex flex-col items-center gap-2 sm:mb-14 sm:gap-2.5"
-      style="opacity: {linksOpacity.toFixed(3)}; transform: translate3d(0, {linksTranslateY.toFixed(1)}px, 0); pointer-events: {linksOpacity > 0.2 ? 'auto' : 'none'};"
-    >
-      <!-- 1. Don't be shy, say hi! -> Opens Animated C++ Connect Card -->
-      <button
-        type="button"
-        onpointerenter={handleLinkHover}
-        onclick={openSayHiModal}
-        class="group inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-md px-4 py-1.5 font-sans text-[16px] font-medium tracking-[-0.01em] text-[#F5F3EA] transition-colors duration-200 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F5F3EA] sm:text-[17px]"
-      >
-        <span class="relative">
-          Don't be shy, say hi!
-          <span
-            aria-hidden="true"
-            class="absolute right-0 -bottom-0.5 left-0 h-[1px] origin-left scale-x-0 bg-[#F5F3EA]/80 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-x-100"
-          ></span>
-        </span>
-        <span
-          aria-hidden="true"
-          class="inline-block transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-1"
-        >
-          →
-        </span>
-      </button>
-
-      <!-- 2. Check my LinkedIn profile ↗ -->
-      <a
-        href="https://www.linkedin.com/in/iam-aryandas"
-        target="_blank"
-        rel="noopener noreferrer"
-        onpointerenter={handleLinkHover}
-        onclick={(e) => {
-          e.stopPropagation();
-          triggerLinkDustBurst?.(e.clientX, e.clientY, 22);
-        }}
-        class="group inline-flex min-h-[44px] items-center gap-2 rounded-md px-4 py-1.5 font-sans text-[16px] font-medium tracking-[-0.01em] text-[#F5F3EA] transition-colors duration-200 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F5F3EA] sm:text-[17px]"
-      >
-        <span class="relative">
-          Check my LinkedIn profile
-          <span
-            aria-hidden="true"
-            class="absolute right-0 -bottom-0.5 left-0 h-[1px] origin-left scale-x-0 bg-[#F5F3EA]/80 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-x-100"
-          ></span>
-        </span>
-        <span
-          aria-hidden="true"
-          class="inline-block transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-        >
-          ↗
-        </span>
-      </a>
-
-      <!-- 3. Download my CV ↓ (Direct link to attached Profile_585ff650.pdf) -->
-      <a
-        href={`${import.meta.env.BASE_URL}assets/aistudio/Profile_585ff650.pdf`}
-        download="Aryan_Das_CV.pdf"
-        onpointerenter={handleLinkHover}
-        onclick={(e) => {
-          e.stopPropagation();
-          handleCvClick(e);
-        }}
-        class="group inline-flex min-h-[44px] items-center gap-2 rounded-md px-4 py-1.5 font-sans text-[16px] font-medium tracking-[-0.01em] text-[#F5F3EA] transition-colors duration-200 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F5F3EA] sm:text-[17px]"
-      >
-        <span class="relative">
-          {cvDownloaded ? 'CV downloaded' : 'Download my CV'}
-          <span
-            aria-hidden="true"
-            class="absolute right-0 -bottom-0.5 left-0 h-[1px] origin-left scale-x-0 bg-[#F5F3EA]/80 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-x-100"
-          ></span>
-        </span>
-        <span
-          aria-hidden="true"
-          class="inline-block transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-y-1"
-        >
-          {cvDownloaded ? '✓' : '↓'}
-        </span>
-      </a>
-    </nav>
-
-    <p
-      class="font-sans text-[12.5px] font-normal tracking-[0.01em] text-[#F5F3EA]/55 select-none"
-      style="opacity: {footerOpacity.toFixed(3)};"
-    >
-      © 2026 Aryan Das
-    </p>
+      role="img"
+      aria-label="AD monogram made of binary ones and zeros"
+      class="h-full max-h-[84dvh] w-full select-none"
+    ></div>
   </div>
 
   <!-- ====================================================================== -->
-  <!-- SAY HI FLOATING C++ EDITOR + BINARY-DUST MATERIALIZED SOCIAL ICONS     -->
-  <!-- Clean floating editor first; social icons emerge from 0/1 dust AFTER!  -->
+  <!-- CONNECT POP-UP MODAL: GITHUB DARK C++ ANIMATION -> BINARY-DUST LINKS   -->
   <!-- ====================================================================== -->
-  {#if sayHiOpen}
+  {#if connectModalOpen}
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
       bind:this={sayHiBackdropEl}
-      onclick={closeSayHiModal}
+      onclick={closeConnectModal}
       onpointerdown={(e) => e.stopPropagation()}
-      class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#0C0807]/88 p-3.5 sm:p-6"
+      class="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-y-auto bg-black/90 p-3 sm:p-6"
       style="opacity: 0;"
     >
-      <!-- Dedicated Binary Dust Canvas for Icon Materialization & Hover Sparks -->
+      <!-- Dedicated GPU Binary Dust Canvas for Icon Materialization & Sparks -->
       <canvas
         bind:this={sayHiDustCanvasEl}
         aria-hidden="true"
@@ -1543,55 +1325,55 @@
         aria-modal="true"
         aria-label="Connect with Aryan Das"
         onclick={(e) => e.stopPropagation()}
-        class="relative z-10 flex w-full max-w-[468px] flex-col items-center"
+        class="relative z-10 my-auto flex max-h-[92dvh] w-full max-w-[520px] flex-col items-center overflow-y-auto py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        <!-- CLEAN FLOATING C++ CODE EDITOR BLOCK (ZERO OUTER WRAPPER CLUTTER) -->
+        <!-- FLOATING C++ CODE EDITOR BLOCK (Authentic GitHub Dark Default Theme) -->
         <div
           bind:this={sayHiEditorEl}
-          class="w-full overflow-hidden rounded-2xl border border-white/14 bg-[#0B0E14] text-left shadow-[0_32px_90px_rgba(0,0,0,0.72)] will-change-transform"
+          class="w-full overflow-hidden rounded-xl border border-[#30363d] bg-[#0d1117] text-left shadow-[0_32px_90px_rgba(0,0,0,0.88)] will-change-transform"
           style="opacity: 0;"
         >
-          <!-- Minimal Editor Titlebar -->
-          <div class="flex items-center justify-between border-b border-white/8 bg-[#131820] px-4 py-2.5">
+          <!-- GitHub Dark Editor Titlebar -->
+          <div class="flex items-center justify-between border-b border-[#30363d] bg-[#161b22] px-4 py-2.5">
             <div class="flex items-center gap-2">
               <span class="h-2.5 w-2.5 rounded-full bg-[#ff5f56]"></span>
               <span class="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]"></span>
               <span class="h-2.5 w-2.5 rounded-full bg-[#27c93f]"></span>
-              <span class="ml-2 font-mono text-[11.5px] font-medium tracking-tight text-[#E6EDF3]">
+              <span class="ml-2 font-mono text-[11.5px] font-medium tracking-tight text-[#e6edf3]">
                 say_hi.cpp
               </span>
             </div>
 
             <div class="flex items-center gap-3">
-              <span class="font-mono text-[10.5px] text-[#8B949E]">
+              <span class="font-mono text-[10.5px] text-[#8b949e]">
                 {cppFinished ? 'exited 0' : 'running...'}
               </span>
               <button
                 type="button"
                 aria-label="Close"
-                onclick={closeSayHiModal}
-                class="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-xs text-[#8B949E] transition-colors duration-150 hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F5F3EA]"
+                onclick={closeConnectModal}
+                class="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-xs text-[#8b949e] transition-colors duration-150 hover:bg-[#30363d] hover:text-[#f0f6fc] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#58a6ff]"
               >
                 ✕
               </button>
             </div>
           </div>
 
-          <!-- Live Syntax-Highlighted C++ Body -->
+          <!-- Live GitHub Dark Syntax-Highlighted C++ Body -->
           <div
             bind:this={sayHiCodeScrollEl}
-            class="overflow-x-auto px-3 py-3 font-mono text-[11px] leading-[1.6] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:px-5 sm:py-4 sm:text-[12.5px] sm:leading-[1.68]"
+            class="overflow-x-auto bg-[#0d1117] px-3 py-3.5 font-mono text-[11px] leading-[1.62] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:px-5 sm:py-4 sm:text-[12.5px] sm:leading-[1.7]"
           >
             {#each visibleSayHiCpp as line (line.lineNumber)}
               <div
                 class="flex items-baseline rounded px-1 {line.isCursorLine && !cppFinished
-                  ? 'bg-white/[0.04]'
+                  ? 'bg-[#6e7681]/15'
                   : ''}"
               >
                 <span
                   class="mr-3.5 w-4 shrink-0 text-right text-[10.5px] select-none {line.isCursorLine
-                    ? 'text-[#E6EDF3]'
-                    : 'text-[#545D68]'}"
+                    ? 'text-[#e6edf3]'
+                    : 'text-[#6e7681]'}"
                 >
                   {line.lineNumber}
                 </span>
@@ -1599,14 +1381,14 @@
                   {#each line.tokens as tok, tIdx (tIdx)}
                     <span style="color: {tok.color};">{tok.text}</span>
                   {/each}{#if line.isCursorLine}<span
-                      class="ml-[1px] inline-block h-[13.5px] w-[6px] translate-y-[2px] bg-[#DF432B] animate-pulse"
+                      class="ml-[1px] inline-block h-[13.5px] w-[6px] translate-y-[2px] bg-[#58a6ff] animate-pulse"
                     ></span>{/if}
                 </span>
               </div>
             {/each}
           </div>
 
-          <!-- Crisp Terminal Execution Strip (Tap/Click to replay C++ + binary dust wave) -->
+          <!-- GitHub Dark Terminal Execution Strip (Click to replay C++ + binary dust wave) -->
           <!-- svelte-ignore a11y_click_events_have_key_events -->
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <div
@@ -1615,60 +1397,52 @@
               e.stopPropagation();
               if (cppFinished) replaySayHiCpp(e.clientX, e.clientY);
             }}
-            class="cursor-pointer border-t border-white/8 bg-[#080A0F] px-4 py-2.5 font-mono text-[11.5px] transition-opacity duration-300 sm:px-5"
-            style="opacity: {cppFinished ? 1 : 0.32};"
+            class="cursor-pointer border-t border-[#30363d] bg-[#010409] px-4 py-2.5 font-mono text-[11.5px] transition-opacity duration-300 sm:px-5"
+            style="opacity: {cppFinished ? 1 : 0.4};"
           >
-            <span class="text-[#DF432B]">$</span>
-            <span class="ml-1.5 text-[#8B949E]">./say_hi</span>
+            <span class="font-bold text-[#3fb950]">$</span>
+            <span class="ml-1.5 text-[#8b949e]">./say_hi</span>
             {#if cppFinished}
-              <span class="ml-2 text-[#F5F3EA]">Hey! Let's connect &amp; build.</span>
+              <span class="ml-2 text-[#e6edf3]">Hey! Let's connect &amp; build.</span>
             {/if}
           </div>
         </div>
 
-        <!-- SOCIAL ICONS BAR (HIDDEN AT FIRST — MATERIALIZES FROM BINARY DUST AFTER C++ RUNS!) -->
+        <!-- POP-OUT SOCIAL, RESUME & 3D CLUSTER ICONS (Materialize from Binary Dust AFTER C++ runs!) -->
         <div
           class="mt-6 flex flex-col items-center gap-3"
           style="pointer-events: {iconsReady ? 'auto' : 'none'};"
         >
-          <div class="flex items-center justify-center gap-3 sm:gap-4">
+          <div class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3.5">
             {#each CONNECT_CHANNELS as channel, idx (channel.id)}
-              <a
-                bind:this={sayHiIconEls[idx]}
-                href={channel.href}
-                target={channel.external ? '_blank' : undefined}
-                rel={channel.external ? 'noopener noreferrer' : undefined}
-                aria-label="{channel.label} — {channel.handle}"
-                ontouchstart={(e) => {
-                  hoveredChannelId = channel.id;
-                  const t = e.touches[0];
-                  if (t) emitModalIconBurst?.(t.clientX, t.clientY, 12);
-                }}
-                onpointerenter={(e) => {
-                  hoveredChannelId = channel.id;
-                  emitModalIconBurst?.(e.clientX, e.clientY, 12);
-                }}
-                onpointerleave={() => {
-                  if (hoveredChannelId === channel.id) hoveredChannelId = null;
-                }}
-                onfocus={() => {
-                  hoveredChannelId = channel.id;
-                }}
-                onblur={() => {
-                  if (hoveredChannelId === channel.id) hoveredChannelId = null;
-                }}
-                onclick={(e) => {
-                  if (channel.id === 'mail') {
-                    handleMailIconClick(e);
-                  } else {
-                    e.stopPropagation();
-                    emitModalIconBurst?.(e.clientX, e.clientY, 20);
-                  }
-                }}
-                class="group relative flex h-12 w-12 items-center justify-center rounded-2xl border border-white/14 bg-[#0B0E14]/92 text-[#F5F3EA] shadow-[0_14px_34px_rgba(0,0,0,0.45)] transition-[transform,border-color,background-color,color] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:border-[#DF432B]/75 hover:bg-[#141923] hover:text-white active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#F5F3EA] sm:h-[58px] sm:w-[58px]"
-                style="opacity: 0;"
-              >
-                {#if channel.id === 'instagram'}
+              {#if channel.id === 'cluster'}
+                <button
+                  bind:this={sayHiIconEls[idx]}
+                  type="button"
+                  aria-label="{channel.label} — {channel.handle}"
+                  ontouchstart={(e) => {
+                    hoveredChannelId = channel.id;
+                    const t = e.touches[0];
+                    if (t) emitModalIconBurst?.(t.clientX, t.clientY, 12);
+                  }}
+                  onpointerenter={(e) => {
+                    hoveredChannelId = channel.id;
+                    emitModalIconBurst?.(e.clientX, e.clientY, 12);
+                  }}
+                  onpointerleave={() => {
+                    if (hoveredChannelId === channel.id) hoveredChannelId = null;
+                  }}
+                  onfocus={() => {
+                    hoveredChannelId = channel.id;
+                  }}
+                  onblur={() => {
+                    if (hoveredChannelId === channel.id) hoveredChannelId = null;
+                  }}
+                  onclick={openClusterTopology}
+                  class="group relative flex h-12 w-12 cursor-pointer items-center justify-center rounded-2xl border border-[#FF261B]/45 bg-[#0A0A0C] text-white shadow-[0_14px_34px_rgba(0,0,0,0.6)] transition-[transform,border-color,background-color,color] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:border-[#FF261B] hover:bg-[#FF261B] hover:text-white active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-white sm:h-[56px] sm:w-[56px]"
+                  style="opacity: 0;"
+                >
+                  <!-- 3D Cluster Network Node Icon -->
                   <svg
                     viewBox="0 0 24 24"
                     fill="none"
@@ -1679,55 +1453,131 @@
                     class="h-[22px] w-[22px] transition-transform duration-200 group-hover:scale-110"
                     aria-hidden="true"
                   >
-                    <rect x="2.5" y="2.5" width="19" height="19" rx="5" />
-                    <circle cx="12" cy="12" r="4.2" />
-                    <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+                    <circle cx="12" cy="12" r="2.4" fill="currentColor" />
+                    <circle cx="5" cy="6" r="1.8" />
+                    <circle cx="19" cy="6" r="1.8" />
+                    <circle cx="5" cy="18" r="1.8" />
+                    <circle cx="19" cy="18" r="1.8" />
+                    <path d="M6.6 7.3L10.2 10.4M17.4 7.3L13.8 10.4M6.6 16.7L10.2 13.6M17.4 16.7L13.8 13.6" />
                   </svg>
-                {:else if channel.id === 'linkedin'}
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    class="h-[21px] w-[21px] transition-transform duration-200 group-hover:scale-110"
-                    aria-hidden="true"
-                  >
-                    <path d="M6.94 8.5H3.56V19.5H6.94V8.5ZM5.25 3.5C4.14 3.5 3.25 4.39 3.25 5.5C3.25 6.6 4.14 7.5 5.25 7.5C6.35 7.5 7.25 6.6 7.25 5.5C7.25 4.39 6.35 3.5 5.25 3.5ZM20.44 13.02C20.44 9.88 18.76 8.22 16.22 8.22C14.37 8.22 13.47 9.24 12.98 9.98V8.5H9.6C9.64 9.48 9.6 19.5 9.6 19.5H12.98V13.36C12.98 13.02 13.01 12.69 13.11 12.45C13.38 11.79 13.99 11.11 15.03 11.11C16.38 11.11 17.06 12.14 17.06 13.65V19.5H20.44V13.02Z" />
-                  </svg>
-                {:else if channel.id === 'github'}
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    class="h-[22px] w-[22px] transition-transform duration-200 group-hover:scale-110"
-                    aria-hidden="true"
-                  >
-                    <path d="M12 2.2C6.48 2.2 2 6.68 2 12.2C2 16.62 4.87 20.36 8.84 21.68C9.34 21.77 9.52 21.46 9.52 21.2C9.52 20.96 9.51 20.17 9.51 19.33C7 19.79 6.35 18.72 6.15 18.16C6.04 17.87 5.55 16.98 5.12 16.74C4.77 16.55 4.27 16.09 5.11 16.08C5.9 16.07 6.46 16.81 6.65 17.11C7.55 18.62 8.99 18.2 9.56 17.94C9.65 17.29 9.91 16.85 10.2 16.6C7.98 16.35 5.66 15.49 5.66 11.67C5.66 10.58 6.05 9.69 6.69 8.99C6.59 8.74 6.24 7.71 6.79 6.33C6.79 6.33 7.63 6.06 9.54 7.35C10.34 7.13 11.19 7.02 12.04 7.02C12.89 7.02 13.74 7.13 14.54 7.35C16.45 6.05 17.29 6.33 17.29 6.33C17.84 7.71 17.49 8.74 17.39 8.99C18.03 9.69 18.42 10.57 18.42 11.67C18.42 15.5 16.09 16.35 13.87 16.6C14.23 16.91 14.54 17.51 14.54 18.45C14.54 19.79 14.53 20.86 14.53 21.2C14.53 21.46 14.71 21.78 15.21 21.68C19.17 20.36 22 16.61 22 12.2C22 6.68 17.52 2.2 12 2.2Z" />
-                  </svg>
-                {:else}
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    class="h-[22px] w-[22px] transition-transform duration-200 group-hover:scale-110"
-                    aria-hidden="true"
-                  >
-                    <rect x="2.5" y="4.5" width="19" height="15" rx="3" />
-                    <path d="M3.5 6.5L12 13L20.5 6.5" />
-                  </svg>
-                {/if}
-              </a>
+                </button>
+              {:else}
+                <a
+                  bind:this={sayHiIconEls[idx]}
+                  href={channel.href}
+                  target={channel.external ? '_blank' : undefined}
+                  rel={channel.external ? 'noopener noreferrer' : undefined}
+                  download={channel.download}
+                  aria-label="{channel.label} — {channel.handle}"
+                  ontouchstart={(e) => {
+                    hoveredChannelId = channel.id;
+                    const t = e.touches[0];
+                    if (t) emitModalIconBurst?.(t.clientX, t.clientY, 12);
+                  }}
+                  onpointerenter={(e) => {
+                    hoveredChannelId = channel.id;
+                    emitModalIconBurst?.(e.clientX, e.clientY, 12);
+                  }}
+                  onpointerleave={() => {
+                    if (hoveredChannelId === channel.id) hoveredChannelId = null;
+                  }}
+                  onfocus={() => {
+                    hoveredChannelId = channel.id;
+                  }}
+                  onblur={() => {
+                    if (hoveredChannelId === channel.id) hoveredChannelId = null;
+                  }}
+                  onclick={(e) => {
+                    if (channel.id === 'mail') {
+                      handleMailIconClick(e);
+                    } else if (channel.id === 'resume') {
+                      handleCvClick(e);
+                    } else {
+                      e.stopPropagation();
+                      emitModalIconBurst?.(e.clientX, e.clientY, 20);
+                    }
+                  }}
+                  class="group relative flex h-12 w-12 items-center justify-center rounded-2xl border border-white/16 bg-[#0A0A0C] text-white shadow-[0_14px_34px_rgba(0,0,0,0.6)] transition-[transform,border-color,background-color,color] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:border-[#FF261B] hover:bg-[#170909] hover:text-white active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-white sm:h-[56px] sm:w-[56px]"
+                  style="opacity: 0;"
+                >
+                  {#if channel.id === 'instagram'}
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="h-[22px] w-[22px] transition-transform duration-200 group-hover:scale-110"
+                      aria-hidden="true"
+                    >
+                      <rect x="2.5" y="2.5" width="19" height="19" rx="5" />
+                      <circle cx="12" cy="12" r="4.2" />
+                      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+                    </svg>
+                  {:else if channel.id === 'linkedin'}
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      class="h-[21px] w-[21px] transition-transform duration-200 group-hover:scale-110"
+                      aria-hidden="true"
+                    >
+                      <path d="M6.94 8.5H3.56V19.5H6.94V8.5ZM5.25 3.5C4.14 3.5 3.25 4.39 3.25 5.5C3.25 6.6 4.14 7.5 5.25 7.5C6.35 7.5 7.25 6.6 7.25 5.5C7.25 4.39 6.35 3.5 5.25 3.5ZM20.44 13.02C20.44 9.88 18.76 8.22 16.22 8.22C14.37 8.22 13.47 9.24 12.98 9.98V8.5H9.6C9.64 9.48 9.6 19.5 9.6 19.5H12.98V13.36C12.98 13.02 13.01 12.69 13.11 12.45C13.38 11.79 13.99 11.11 15.03 11.11C16.38 11.11 17.06 12.14 17.06 13.65V19.5H20.44V13.02Z" />
+                    </svg>
+                  {:else if channel.id === 'github'}
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      class="h-[22px] w-[22px] transition-transform duration-200 group-hover:scale-110"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 2.2C6.48 2.2 2 6.68 2 12.2C2 16.62 4.87 20.36 8.84 21.68C9.34 21.77 9.52 21.46 9.52 21.2C9.52 20.96 9.51 20.17 9.51 19.33C7 19.79 6.35 18.72 6.15 18.16C6.04 17.87 5.55 16.98 5.12 16.74C4.77 16.55 4.27 16.09 5.11 16.08C5.9 16.07 6.46 16.81 6.65 17.11C7.55 18.62 8.99 18.2 9.56 17.94C9.65 17.29 9.91 16.85 10.2 16.6C7.98 16.35 5.66 15.49 5.66 11.67C5.66 10.58 6.05 9.69 6.69 8.99C6.59 8.74 6.24 7.71 6.79 6.33C6.79 6.33 7.63 6.06 9.54 7.35C10.34 7.13 11.19 7.02 12.04 7.02C12.89 7.02 13.74 7.13 14.54 7.35C16.45 6.05 17.29 6.33 17.29 6.33C17.84 7.71 17.49 8.74 17.39 8.99C18.03 9.69 18.42 10.57 18.42 11.67C18.42 15.5 16.09 16.35 13.87 16.6C14.23 16.91 14.54 17.51 14.54 18.45C14.54 19.79 14.53 20.86 14.53 21.2C14.53 21.46 14.71 21.78 15.21 21.68C19.17 20.36 22 16.61 22 12.2C22 6.68 17.52 2.2 12 2.2Z" />
+                    </svg>
+                  {:else if channel.id === 'resume'}
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="h-[21px] w-[21px] transition-transform duration-200 group-hover:scale-110"
+                      aria-hidden="true"
+                    >
+                      <path d="M14 2.5H6.5A2 2 0 0 0 4.5 4.5V19.5A2 2 0 0 0 6.5 21.5H17.5A2 2 0 0 0 19.5 19.5V8Z" />
+                      <path d="M14 2.5V8H19.5" />
+                      <path d="M12 11.5V17.5M9.5 15L12 17.5L14.5 15" />
+                    </svg>
+                  {:else}
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="h-[22px] w-[22px] transition-transform duration-200 group-hover:scale-110"
+                      aria-hidden="true"
+                    >
+                      <rect x="2.5" y="4.5" width="19" height="15" rx="3" />
+                      <path d="M3.5 6.5L12 13L20.5 6.5" />
+                    </svg>
+                  {/if}
+                </a>
+              {/if}
             {/each}
           </div>
 
-          <!-- Quiet Hover-Only Handle Caption (zero resting clutter) -->
-          <div class="h-5 font-mono text-[12px] tracking-tight text-[#F5F3EA]/80">
+          <!-- Quiet Hover / Status Caption -->
+          <div class="h-5 font-mono text-[12px] tracking-tight text-white/85">
             {#if copiedMail}
-              <span class="text-[#F5F3EA]">Copied aryandas.original@gmail.com ✓</span>
+              <span class="text-white">Copied aryandas.original@gmail.com ✓</span>
+            {:else if cvDownloaded}
+              <span class="text-white">Downloading Aryan_Das_CV.pdf ✓</span>
             {:else if activeHoverChannel}
               <span>
-                <span class="text-[#F5F3EA]/55">{activeHoverChannel.label}</span>
-                <span class="mx-1.5 text-[#DF432B]">·</span>
+                <span class="text-white/55">{activeHoverChannel.label}</span>
+                <span class="mx-1.5 text-[#FF261B]">·</span>
                 <span>{activeHoverChannel.handle}</span>
               </span>
             {/if}
@@ -1736,16 +1586,20 @@
       </div>
     </div>
   {/if}
-</div>
 
-<style>
-  .thankyou-wordmark {
-    font-family: var(--font-editorial, "Fraunces", Georgia, serif);
-    font-variation-settings: "SOFT" 100, "WONK" 1, "opsz" 144;
-    font-weight: 700;
-    font-size: clamp(2.85rem, 15.6vw, 15.8rem);
-    line-height: 0.92;
-    letter-spacing: -0.028em;
-    color: #f5f3ea;
-  }
-</style>
+  <!-- ====================================================================== -->
+  <!-- INTERACTIVE THREE.JS 3D CLUSTER TOPOLOGY NETWORK OVERLAY               -->
+  <!-- Rotate 360°, zoom freely, and click any compute node to fly-to inspect -->
+  <!-- ====================================================================== -->
+  {#if clusterModalOpen}
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="3D Cluster Topology Network"
+      onpointerdown={(e) => e.stopPropagation()}
+      class="fixed inset-0 z-50 h-screen h-[100dvh] w-screen bg-[#050505]"
+    >
+      <ClusterTopologyNetwork onClose={() => (clusterModalOpen = false)} />
+    </div>
+  {/if}
+</div>
