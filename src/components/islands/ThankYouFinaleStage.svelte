@@ -1294,7 +1294,7 @@
       bind:this={sayHiBackdropEl}
       onclick={closeConnectModal}
       onpointerdown={(e) => e.stopPropagation()}
-      class="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-y-auto bg-black/90 p-3 sm:p-6"
+      class="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-y-auto bg-[#f5f5f2]/85 p-3 sm:p-6 backdrop-blur-xl"
       style="opacity: 0;"
     >
       <!-- Dedicated GPU Binary Dust Canvas for Icon Materialization & Sparks -->
@@ -1434,7 +1434,7 @@
                       emitModalIconBurst?.(e.clientX, e.clientY, 20);
                     }
                   }}
-                  class="group relative flex h-12 w-12 items-center justify-center rounded-2xl border border-white/16 bg-[#0A0A0C] text-white shadow-[0_14px_34px_rgba(0,0,0,0.6)] transition-[transform,border-color,background-color,color] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:border-[#FF261B] hover:bg-[#170909] hover:text-white active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-white sm:h-[56px] sm:w-[56px]"
+                  class="group relative flex h-12 w-12 items-center justify-center rounded-2xl border border-black/12 bg-white text-black shadow-md transition-[transform,border-color,background-color,color] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:border-[#FF261B] hover:bg-black hover:text-white active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-black sm:h-[56px] sm:w-[56px]"
                   style="opacity: 0;"
                 >
                   {#if channel.id === 'instagram'}
@@ -1505,16 +1505,16 @@
           </div>
 
           <!-- Quiet Hover / Status Caption -->
-          <div class="h-5 font-mono text-[12px] tracking-tight text-white/85">
+          <div class="h-5 font-mono text-[12px] tracking-tight text-black/85">
             {#if copiedMail}
-              <span class="text-white">Copied aryandas.original@gmail.com ✓</span>
+              <span class="font-semibold text-black">Copied aryandas.original@gmail.com ✓</span>
             {:else if cvDownloaded}
-              <span class="text-white">Downloading Aryan_Das_CV.pdf ✓</span>
+              <span class="font-semibold text-black">Downloading Aryan_Das_CV.pdf ✓</span>
             {:else if activeHoverChannel}
               <span>
-                <span class="text-white/55">{activeHoverChannel.label}</span>
+                <span class="text-black/60">{activeHoverChannel.label}</span>
                 <span class="mx-1.5 text-[#FF261B]">·</span>
-                <span>{activeHoverChannel.handle}</span>
+                <span class="font-semibold text-black">{activeHoverChannel.handle}</span>
               </span>
             {/if}
           </div>

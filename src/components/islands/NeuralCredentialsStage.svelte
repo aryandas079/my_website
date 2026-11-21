@@ -14,13 +14,15 @@
     type CredentialItem,
     type FoundationProfile,
   } from '../../lib/credentials/credentialsData';
+  import FluidNavButton from './FluidNavButton.svelte';
 
   interface Props {
     buildProgress?: number;
     onNodeInteract?: (clientX: number, clientY: number) => void;
+    onEducationClick?: () => void;
   }
 
-  let { buildProgress = 1, onNodeInteract }: Props = $props();
+  let { buildProgress = 1, onNodeInteract, onEducationClick }: Props = $props();
 
   type SelectedTarget =
     | { kind: 'credential'; item: CredentialItem; nodeId: string }
@@ -1493,6 +1495,23 @@
     </div>
   </div>
 
+  <!-- Ferrofluid Education Button in Bottom-Left (matching red circled area) -->
+  <div
+    class="pointer-events-auto absolute bottom-[max(4.6rem,calc(env(safe-area-inset-bottom)+3.8rem))] left-3 z-30 md:bottom-[max(1.1rem,env(safe-area-inset-bottom))] md:left-[max(1.75rem,env(safe-area-inset-left))]"
+    style="opacity: {Math.max(0, Math.min(1, (buildProgress - 0.45) / 0.35)).toFixed(3)};"
+  >
+    <FluidNavButton
+      id="credentials-education-btn"
+      label="Education"
+      compact={true}
+      lightRim={true}
+      onclick={(e) => {
+        e.stopPropagation();
+        onEducationClick?.();
+      }}
+    />
+  </div>
+
   <!-- Crisp Light Gallery Detail Card (GSAP Expand from Node + Binary Dust Veil) -->
   {#if selectedTarget}
     <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -1762,11 +1781,11 @@
       onclick={() => {
         lightboxImageSrc = null;
       }}
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-6"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-[#f5f5f2]/85 p-3 sm:p-6 backdrop-blur-xl"
     >
       <div
         onclick={(e) => e.stopPropagation()}
-        class="relative max-h-[90vh] max-w-[920px] overflow-hidden rounded-2xl bg-white p-2.5 shadow-2xl sm:p-3"
+        class="relative max-h-[90vh] max-w-[920px] overflow-hidden rounded-2xl border border-black/10 bg-white p-2.5 shadow-[0_24px_80px_rgba(0,0,0,0.12)] sm:p-3"
       >
         <img
           src={lightboxImageSrc}
@@ -1779,7 +1798,7 @@
           onclick={() => {
             lightboxImageSrc = null;
           }}
-          class="mt-2 ml-auto block cursor-pointer rounded-lg bg-[#141412] px-4 py-1.5 font-display text-[12px] font-semibold text-white hover:bg-[#FF261B]"
+          class="mt-2 ml-auto block cursor-pointer rounded-lg bg-black px-4 py-1.5 font-display text-[12px] font-semibold text-white hover:bg-[#FF261B]"
         >
           Close
         </button>

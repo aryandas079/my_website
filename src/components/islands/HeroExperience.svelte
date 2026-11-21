@@ -17,6 +17,7 @@
   import MotiClaySkillsWord from './MotiClaySkillsWord.svelte';
   import BinaryScanlineCatArt from './BinaryScanlineCatArt.svelte';
   import NeuralCredentialsStage from './NeuralCredentialsStage.svelte';
+  import EducationCardsModal from './EducationCardsModal.svelte';
   import ThankYouFinaleStage from './ThankYouFinaleStage.svelte';
   import {
     TECH_STACK_SKILLS,
@@ -219,7 +220,10 @@
   let isNarrowMobile = $derived(viewportW < 400);
   let isTvScreen = $derived(viewportW >= 2200 && viewportH >= 1100);
   let sayHiModalOpen = $state(false);
-  let isModalOverlayOpen = $derived(focusedCardIdx !== null || sayHiModalOpen);
+  let isEducationModalOpen = $state(false);
+  let isModalOverlayOpen = $derived(
+    focusedCardIdx !== null || sayHiModalOpen || isEducationModalOpen
+  );
   let desktopCursorMargin = $derived(
     isCarOrShortLandscape
       ? 0.22
@@ -642,6 +646,10 @@
       if (focusScrollContainer) {
         focusScrollContainer.scrollTop = 0;
       }
+      if (focusReadmeContainerEl) {
+        gsap.set(focusReadmeContainerEl, { opacity: 0, y: 36 });
+      }
+      readmeSlideAnimated = false;
 
       focusFlipTimeline?.kill();
       const tl = gsap.timeline({ defaults: { force3D: true } });
@@ -2270,7 +2278,7 @@
         data-exclude-pad-top="14"
         data-exclude-pad-bottom="14"
         class="relative inline-block"
-        style="opacity: {credentialsTitleSolidOpacity.toFixed(3)};"
+        style="opacity: {isEducationModalOpen ? '0' : credentialsTitleSolidOpacity.toFixed(3)};"
       >
         <h2
           class="font-display text-[clamp(1.9rem,min(7vw,11dvh),6.6rem)] leading-[0.86] font-extrabold tracking-[-0.05em] text-[#ff261b] select-none"
@@ -2288,6 +2296,9 @@
       <NeuralCredentialsStage
         buildProgress={credentialsBuildProgress}
         onNodeInteract={handleNeuralNodeInteract}
+        onEducationClick={() => {
+          isEducationModalOpen = true;
+        }}
       />
     </div>
   </div>
@@ -2324,27 +2335,27 @@
   <div
     bind:this={focusBackdropEl}
     onclick={closeCardFocusView}
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-3 sm:p-6"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-[#f5f5f2]/85 p-3 sm:p-6 backdrop-blur-xl"
     style="opacity: 0;"
   >
     <div
       onclick={(e) => e.stopPropagation()}
       class="relative h-[88dvh] max-h-[760px] w-full max-w-[min(860px,94vw)]"
     >
-      <!-- Modal Inner Container -->
+      <!-- Modal Inner Container (Clean Swiss Light Theme) -->
       <div
         bind:this={focusScrollContainer}
         onscroll={handleFocusScroll}
-        class="focus-scroll-pane relative h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth rounded-[28px] border border-white/20 bg-[#0a0a0a] text-left text-white shadow-[0_36px_100px_rgba(0,0,0,0.95)]"
+        class="focus-scroll-pane relative h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth rounded-[28px] border border-black/10 bg-[#ffffff] text-left text-black shadow-[0_32px_90px_rgba(0,0,0,0.12)]"
       >
         <!-- Top Sticky Header Bar with Repo Metadata and Close Button -->
-        <div class="sticky top-0 z-30 flex items-center justify-between border-b border-white/10 bg-[#0a0a0a]/92 px-5 py-3.5 backdrop-blur-md sm:px-8 sm:py-4">
+        <div class="sticky top-0 z-30 flex items-center justify-between border-b border-black/8 bg-white/95 px-5 py-3.5 backdrop-blur-md sm:px-8 sm:py-4">
           <div class="flex items-center gap-2.5">
-            <span class="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/10 px-2.5 py-1 font-mono text-[11px] font-medium text-white sm:text-xs">
-              <span class="h-2 w-2 rounded-full" style="background-color: {focusedPin.langColor || '#ffffff'};"></span>
+            <span class="inline-flex items-center gap-1.5 rounded-lg border border-black/12 bg-black/5 px-2.5 py-1 font-mono text-[11px] font-medium text-black sm:text-xs">
+              <span class="h-2 w-2 rounded-full" style="background-color: {focusedPin.langColor || '#111111'};"></span>
               <span>{focusedPin.language}</span>
             </span>
-            <span class="hidden font-mono text-xs font-semibold text-white/60 sm:inline">@aryandas079</span>
+            <span class="hidden font-mono text-xs font-semibold text-black/60 sm:inline">@aryandas079</span>
           </div>
 
           <button
@@ -2354,24 +2365,27 @@
               closeCardFocusView();
             }}
             aria-label="Close project details"
-            class="group inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 font-sans text-xs font-semibold text-white transition-all hover:border-white/40 hover:bg-white/20 active:scale-95 sm:px-4 sm:py-1.5 sm:text-sm"
+            class="group inline-flex items-center gap-1.5 rounded-full border border-black/15 bg-black/5 px-3.5 py-1.5 font-sans text-xs font-semibold text-black transition-all hover:border-black/30 hover:bg-black hover:text-white active:scale-95 sm:px-4 sm:py-1.5 sm:text-sm"
           >
             <span>Close</span>
-            <span class="text-white/60 group-hover:text-white">✕</span>
+            <span class="text-black/50 group-hover:text-white">✕</span>
           </button>
         </div>
 
-        <!-- STAGE 1: Clean Hero Section with Title, Description, and View Project Button -->
-        <div class="flex flex-col items-center justify-center px-6 py-10 text-center sm:px-14 sm:py-14">
+        <!-- STAGE 1: Clean Hero Section with Title, Description, and View Project Button (Occupies full initial view) -->
+        <div
+          class="flex flex-col items-center justify-center px-6 py-12 text-center sm:px-14 sm:py-16"
+          style="min-height: calc(100% - 64px);"
+        >
           <div
             bind:this={focusHeroStageEl}
             class="flex w-full max-w-full flex-col items-center"
           >
-            <h3 class="w-full max-w-full break-words [overflow-wrap:anywhere] font-display text-3xl leading-[1.08] font-extrabold tracking-[-0.035em] text-white sm:text-5xl">
+            <h3 class="w-full max-w-full break-words [overflow-wrap:anywhere] font-display text-3xl leading-[1.08] font-extrabold tracking-[-0.035em] text-black sm:text-5xl">
               {focusedPin.repoName.replace(/_/g, '_\u200B')}
             </h3>
 
-            <p class="mt-4 max-w-[560px] break-words font-sans text-sm leading-relaxed text-white/80 sm:text-base">
+            <p class="mt-4 max-w-[560px] break-words font-sans text-sm leading-relaxed text-black/80 sm:text-base">
               {focusedPin.description}
             </p>
 
@@ -2384,7 +2398,7 @@
                 href={focusedPin.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                class="inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3 font-sans text-sm font-bold tracking-tight text-[#0a0a0a] shadow-lg transition-all duration-200 hover:scale-[1.03] hover:bg-white/90"
+                class="inline-flex items-center gap-2 rounded-xl bg-black px-7 py-3 font-sans text-sm font-bold tracking-tight text-white shadow-lg transition-all duration-200 hover:scale-[1.03] hover:bg-[#ff261b]"
               >
                 <span>View on GitHub</span>
                 <span>↗</span>
@@ -2395,7 +2409,7 @@
                 onclick={() => {
                   focusReadmeContainerEl?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                class="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/5 px-5 py-3 font-sans text-sm font-medium text-white/85 transition-all hover:bg-white/10"
+                class="inline-flex items-center gap-1.5 rounded-xl border border-black/15 bg-black/5 px-5 py-3 font-sans text-sm font-medium text-black transition-all hover:bg-black/10"
               >
                 <span>Read Overview</span>
                 <span class="text-xs text-[#ff261b]">↓</span>
@@ -2404,20 +2418,21 @@
           </div>
         </div>
 
-        <!-- STAGE 2: Clean Project README Section -->
+        <!-- STAGE 2: Clean Project README Section (Appears ONLY when scrolled down) -->
         <div
           bind:this={focusReadmeContainerEl}
-          class="border-t border-white/12 bg-[#0d1117] px-6 py-8 text-white sm:px-12 sm:py-10"
+          class="border-t border-black/8 bg-[#fbfbf9] px-6 py-8 text-black sm:px-12 sm:py-10"
+          style="opacity: 0; transform: translate3d(0, 36px, 0);"
         >
-          <div class="mb-6 flex items-center justify-between border-b border-white/10 pb-3">
-            <span class="font-mono text-xs font-semibold uppercase tracking-wider text-white/60">
+          <div class="mb-6 flex items-center justify-between border-b border-black/8 pb-3">
+            <span class="font-mono text-xs font-semibold uppercase tracking-wider text-black/60">
               README.md
             </span>
             <a
               href="{focusedPin.url}#readme"
               target="_blank"
               rel="noopener noreferrer"
-              class="font-mono text-xs text-[#ff261b] hover:underline"
+              class="font-mono text-xs font-semibold text-[#ff261b] hover:underline"
             >
               Open source on GitHub ↗
             </a>
@@ -2430,6 +2445,16 @@
       </div>
     </div>
   </div>
+{/if}
+
+<!-- Education Academic Dossier Modal (Mounted at root level for clean stacking context) -->
+{#if isEducationModalOpen}
+  <EducationCardsModal
+    isOpen={isEducationModalOpen}
+    onClose={() => {
+      isEducationModalOpen = false;
+    }}
+  />
 {/if}
 
 <style>
@@ -2457,7 +2482,7 @@
   }
 
   :global(.gh-readme-body) {
-    color: #f5f5f2;
+    color: #181816;
     line-height: 1.72;
     font-size: 0.865rem;
     letter-spacing: -0.01em;
@@ -2489,8 +2514,8 @@
     font-size: 1.55rem;
     font-weight: 800;
     letter-spacing: -0.03em;
-    color: #ffffff;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    color: #111111;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     padding-bottom: 0.65rem;
     margin-top: 0.75rem;
     margin-bottom: 1rem;
@@ -2501,8 +2526,8 @@
     font-size: 1.18rem;
     font-weight: 700;
     letter-spacing: -0.02em;
-    color: #ffffff;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    color: #111111;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     padding-bottom: 0.45rem;
     margin-top: 1.75rem;
     margin-bottom: 0.85rem;
@@ -2513,13 +2538,13 @@
   :global(.gh-readme-body h4) {
     font-size: 0.98rem;
     font-weight: 700;
-    color: #ffffff;
+    color: #111111;
     margin-top: 0.65rem;
     margin-bottom: 0.65rem;
   }
 
   :global(.gh-readme-body p) {
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(24, 24, 22, 0.82);
     margin-top: 0.55rem;
     margin-bottom: 0.75rem;
   }
@@ -2538,7 +2563,7 @@
 
   :global(.gh-readme-body a:hover),
   :global(.gh-readme-body .gh-readme-link:hover) {
-    color: #ff473d;
+    color: #ff261b;
     text-decoration-color: #ff261b;
   }
 
@@ -2547,7 +2572,6 @@
     height: auto;
     border-radius: 6px;
     display: inline-block;
-    filter: grayscale(1) contrast(1.06);
   }
 
   :global(.gh-readme-body ul),
@@ -2555,7 +2579,7 @@
     margin-top: 0.5rem;
     margin-bottom: 1rem;
     padding-left: 1.4rem;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(24, 24, 22, 0.82);
   }
 
   :global(.gh-readme-body ul) {
@@ -2571,13 +2595,13 @@
   }
 
   :global(.gh-readme-body li strong) {
-    color: #ffffff;
+    color: #111111;
   }
 
   :global(.gh-readme-body code) {
     font-size: 0.81rem;
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
+    background: rgba(0, 0, 0, 0.05);
+    color: #ff261b;
     padding: 0.15rem 0.4rem;
     border-radius: 5px;
   }
@@ -2586,8 +2610,8 @@
     margin-top: 0.9rem;
     margin-bottom: 1.15rem;
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    background: #121212;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: #ffffff;
     overflow: hidden;
   }
 
@@ -2596,12 +2620,12 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.4rem 0.85rem;
-    background: rgba(255, 255, 255, 0.05);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.03);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(24, 24, 22, 0.65);
     font-weight: 700;
   }
 
@@ -2614,22 +2638,22 @@
   :global(.gh-readme-body .gh-code-block code) {
     background: transparent;
     padding: 0;
-    color: #ffffff;
+    color: #181816;
     font-size: 0.8rem;
     line-height: 1.65;
   }
 
   :global(.gh-readme-body blockquote) {
-    border-left: 3px solid #ffffff;
+    border-left: 3px solid #ff261b;
     padding-left: 1rem;
     margin: 0.9rem 0;
-    color: rgba(255, 255, 255, 0.65);
+    color: rgba(24, 24, 22, 0.75);
     font-style: italic;
   }
 
   :global(.gh-readme-body hr) {
     border: 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
     margin: 1.5rem 0;
     width: 100%;
   }
@@ -2638,7 +2662,7 @@
     overflow-x: auto;
     margin: 1rem 0;
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(0, 0, 0, 0.1);
   }
 
   :global(.gh-readme-body table) {
@@ -2650,13 +2674,13 @@
   :global(.gh-readme-body th),
   :global(.gh-readme-body td) {
     padding: 0.6rem 0.85rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     text-align: left;
   }
 
   :global(.gh-readme-body th) {
-    background: rgba(255, 255, 255, 0.06);
-    color: #ffffff;
+    background: rgba(0, 0, 0, 0.04);
+    color: #111111;
     font-weight: 700;
   }
 </style>

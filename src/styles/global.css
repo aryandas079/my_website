@@ -8,7 +8,8 @@
 }
 
 :root {
-  /* Palette State A (Swiss Paper - Image 2): 2 Dull Colors + 1 Bright Color */
+  color-scheme: light;
+  /* Palette State A (Swiss Paper): Strict 3 Colors - White, Black, Red */
   --bg-dull: #f5f5f2;
   --surface-dull: #e4e4de;
   --muted-dull: #8e8e86;
@@ -23,11 +24,11 @@
 }
 
 :root[data-surface="obsidian"] {
-  /* Palette State B (Obsidian Studio - Image 1): 2 Dull Colors + 1 Bright Color */
-  --bg-dull: #0a0a0c;
-  --surface-dull: #18181c;
-  --muted-dull: #71717a;
-  --ink-dull: #f4f4f5;
+  /* Enforce Light Mode everywhere on all devices */
+  --bg-dull: #f5f5f2;
+  --surface-dull: #e4e4de;
+  --muted-dull: #8e8e86;
+  --ink-dull: #181816;
   --bright-accent: #ff261b;
 }
 
@@ -58,6 +59,7 @@
 @layer base {
   html,
   body {
+    color-scheme: light;
     font-family: var(--font-sans);
     background-color: var(--bg-dull);
     color: var(--ink-dull);

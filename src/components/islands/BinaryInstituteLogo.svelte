@@ -56,17 +56,19 @@
     const compCanvas = document.createElement('canvas');
     const compCtx = compCanvas.getContext('2d');
 
-    const COLS = compact ? 38 : 66;
-    const ROWS = compact ? 34 : 58;
+    const COLS = compact ? 42 : 72;
+    const ROWS = compact ? 38 : 68;
     let activeCells: MaskCell[] = [];
 
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    if (logoSrc.startsWith('http://') || logoSrc.startsWith('https://')) {
+      img.crossOrigin = 'anonymous';
+    }
     img.onload = () => {
       if (disposed || !artCtx) return;
 
       artCtx.clearRect(0, 0, ART_SIZE, ART_SIZE);
-      const pad = 16;
+      const pad = 14;
       const avail = ART_SIZE - pad * 2;
       const aspect = img.naturalWidth / Math.max(1, img.naturalHeight);
       let drawW = avail;
@@ -80,7 +82,7 @@
       const dy = (ART_SIZE - drawH) * 0.5;
       artCtx.drawImage(img, dx, dy, drawW, drawH);
 
-      // Cleanly key out neutral light-gray / white background pixels and deepen foreground ink contrast
+      // Cleanly key out background and map pixels strictly to Swiss White, Black & Red palette
       const imgData = artCtx.getImageData(0, 0, ART_SIZE, ART_SIZE);
       const px = imgData.data;
 
@@ -89,7 +91,7 @@
         const g = px[i + 1];
         const b = px[i + 2];
         const a = px[i + 3];
-        if (a < 24) {
+        if (a < 20) {
           px[i + 3] = 0;
           continue;
         }
@@ -98,18 +100,27 @@
         const chroma = maxC - minC;
         const lum = 0.299 * r + 0.587 * g + 0.114 * b;
 
-        if (lum > 232 && chroma < 24) {
+        // Key out near-white background pixels
+        if (lum > 228 && chroma < 26) {
           px[i + 3] = 0;
           continue;
         }
 
-        // Smooth edge feathering near white background while keeping crisp rich ink colors
-        const edgeFade = chroma < 26 && lum > 205 ? (232 - lum) / 27 : 1;
-        const darken = chroma > 28 ? 0.94 : 0.65;
-        px[i] = Math.max(0, Math.min(255, Math.round(r * darken)));
-        px[i + 1] = Math.max(0, Math.min(255, Math.round(g * darken)));
-        px[i + 2] = Math.max(0, Math.min(255, Math.round(b * darken)));
-        px[i + 3] = Math.max(0, Math.min(255, Math.round(a * edgeFade)));
+        // Strict 3-color mapping:
+        // Chromatic warm features (petals, flame, torch, red accents) -> Pure Red (#FF261B)
+        // Text, rings, and line contours -> Rich Black (#111111)
+        const isWarmAccent = chroma > 20 && (r > 110 || (r > b && r > g));
+        if (isWarmAccent) {
+          px[i] = 255;
+          px[i + 1] = 38;
+          px[i + 2] = 27;
+          px[i + 3] = 255;
+        } else {
+          px[i] = 17;
+          px[i + 1] = 17;
+          px[i + 2] = 17;
+          px[i + 3] = 255;
+        }
       }
       artCtx.putImageData(imgData, 0, 0);
 
